@@ -1,0 +1,16 @@
+{
+  "name": "@smokejumper/plugin-sdk",
+  "version": "0.1.0",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": "./src/index.ts",
+    "./testing": "./src/testing.ts"
+  },
+  "peerDependencies": {
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "zod": "^3.25.0"
+  }
+}
