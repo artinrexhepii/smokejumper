@@ -190,3 +190,33 @@ export const diagnoses = pgTable(
 )
 
 export type Diagnosis = typeof diagnoses.$inferSelect
+
+export type MemoryKind = 'incident' | 'runbook'
+
+export const memoryEntries = pgTable('memory_entries', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  projectId: uuid('project_id').notNull().references(() => projects.id),
+  kind: text('kind').$type<MemoryKind>().notNull(),
+  content: text('content').notNull(),
+  embedding: vector('embedding', { dimensions: 1536 }).notNull(),
+  metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+export type MemoryEntry = typeof memoryEntries.$inferSelect
+
+export type AuditActorType = 'user' | 'agent' | 'system'
+
+export const auditLog = pgTable('audit_log', {
+  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  orgId: uuid('org_id').notNull().references(() => organizations.id),
+  actorType: text('actor_type').$type<AuditActorType>().notNull(),
+  actorId: text('actor_id').notNull(),
+  action: text('action').notNull(),
+  subjectType: text('subject_type').notNull(),
+  subjectId: text('subject_id').notNull(),
+  detail: jsonb('detail').$type<Record<string, unknown>>().notNull().default({}),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+export type AuditEntry = typeof auditLog.$inferSelect
