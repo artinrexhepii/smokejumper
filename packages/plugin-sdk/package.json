@@ -3,9 +3,19 @@
   "version": "0.1.0",
   "type": "module",
   "license": "MIT",
+  "files": ["dist"],
   "exports": {
-    ".": "./src/index.ts",
-    "./testing": "./src/testing.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./testing": {
+      "types": "./dist/testing.d.ts",
+      "import": "./dist/testing.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts src/testing.ts --format esm --dts --clean"
   },
   "peerDependencies": {
     "zod": "^3.25.0"
