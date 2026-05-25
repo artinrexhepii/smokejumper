@@ -1,7 +1,19 @@
 import { and, desc, eq, gt, inArray, sql } from 'drizzle-orm'
 import type { NormalizedAlert } from '@smokejumper/plugin-sdk'
 import type { Db } from './db.ts'
-import { alerts, incidents, type Incident, type IncidentStatus } from './schema.ts'
+import { listEvidence, listFindings } from './investigations.ts'
+import {
+  alerts,
+  diagnoses,
+  incidents,
+  investigations,
+  type Diagnosis,
+  type EvidenceRecord,
+  type Finding,
+  type Incident,
+  type IncidentStatus,
+  type Investigation,
+} from './schema.ts'
 
 export async function findOpenIncidentByDedupKey(
   db: Db,
@@ -79,4 +91,37 @@ export async function updateIncidentStatus(
     .update(incidents)
     .set(status === 'resolved' ? { status, resolvedAt: new Date() } : { status })
     .where(eq(incidents.id, incidentId))
+}
+
+export interface IncidentDetail {
+  incident: Incident
+  investigation?: Investigation
+  findings: Finding[]
+  diagnosis?: Diagnosis
+  evidence: EvidenceRecord[]
+}
+
+export async function getIncidentDetail(db: Db, incidentId: string): Promise<IncidentDetail | undefined> {
+  const incident = await getIncident(db, incidentId)
+  if (!incident) return undefined
+  const [investigation] = await db
+    .select()
+    .from(investigations)
+    .where(eq(investigations.incidentId, incidentId))
+    .orderBy(desc(investigations.startedAt))
+    .limit(1)
+  if (!investigation) return { incident, findings: [], evidence: [] }
+  const [diagnosis] = await db
+    .select()
+    .from(diagnoses)
+    .where(eq(diagnoses.investigationId, investigation.id))
+    .orderBy(desc(diagnoses.version))
+    .limit(1)
+  return {
+    incident,
+    investigation,
+    findings: await listFindings(db, investigation.id),
+    diagnosis,
+    evidence: await listEvidence(db, investigation.id),
+  }
 }

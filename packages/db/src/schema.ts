@@ -113,3 +113,80 @@ export const alerts = pgTable('alerts', {
 })
 
 export type Alert = typeof alerts.$inferSelect
+
+export type InvestigationStatus = 'running' | 'completed' | 'failed' | 'budget_exceeded'
+
+export interface InvestigationBudget {
+  maxToolCalls: number
+  maxWallMs: number
+}
+
+export const investigations = pgTable('investigations', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  incidentId: uuid('incident_id').notNull().references(() => incidents.id),
+  status: text('status').$type<InvestigationStatus>().notNull().default('running'),
+  budget: jsonb('budget').$type<InvestigationBudget>().notNull(),
+  stats: jsonb('stats').$type<Record<string, unknown>>().notNull().default({}),
+  startedAt: timestamp('started_at', { withTimezone: true }).notNull().defaultNow(),
+  completedAt: timestamp('completed_at', { withTimezone: true }),
+})
+
+export type Investigation = typeof investigations.$inferSelect
+
+export const evidenceRecords = pgTable(
+  'evidence_records',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    investigationId: uuid('investigation_id').notNull().references(() => investigations.id),
+    seq: integer('seq').notNull(),
+    toolName: text('tool_name').notNull(),
+    input: jsonb('input').notNull(),
+    output: jsonb('output').notNull(),
+    summary: text('summary').notNull(),
+    prevHash: text('prev_hash').notNull(),
+    hash: text('hash').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [unique().on(t.investigationId, t.seq)],
+)
+
+export type EvidenceRecord = typeof evidenceRecords.$inferSelect
+
+export const findings = pgTable('findings', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  investigationId: uuid('investigation_id').notNull().references(() => investigations.id),
+  specialist: text('specialist').notNull(),
+  summary: text('summary').notNull(),
+  evidenceIds: uuid('evidence_ids').array().notNull().default(sql`'{}'::uuid[]`),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+export type Finding = typeof findings.$inferSelect
+
+export interface EvidenceChainClaim {
+  claim: string
+  evidenceIds: string[]
+  verified: boolean
+}
+
+export type DiagnosisVerdict = 'confirmed' | 'rejected' | 'partial'
+
+export const diagnoses = pgTable(
+  'diagnoses',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    investigationId: uuid('investigation_id').notNull().references(() => investigations.id),
+    version: integer('version').notNull().default(1),
+    rootCause: text('root_cause').notNull(),
+    confidence: real('confidence').notNull(),
+    evidenceChain: jsonb('evidence_chain').$type<EvidenceChainClaim[]>().notNull(),
+    remediation: text('remediation').notNull(),
+    openQuestions: text('open_questions').array().notNull().default(sql`'{}'::text[]`),
+    humanVerdict: text('human_verdict').$type<DiagnosisVerdict>(),
+    humanNote: text('human_note'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [unique().on(t.investigationId, t.version)],
+)
+
+export type Diagnosis = typeof diagnoses.$inferSelect
