@@ -85,3 +85,31 @@ export const pluginInstances = pgTable('plugin_instances', {
 })
 
 export type PluginInstance = typeof pluginInstances.$inferSelect
+
+export type IncidentStatus = 'open' | 'investigating' | 'diagnosed' | 'resolved'
+
+export const incidents = pgTable('incidents', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  projectId: uuid('project_id').notNull().references(() => projects.id),
+  status: text('status').$type<IncidentStatus>().notNull().default('open'),
+  severity: text('severity').notNull(),
+  title: text('title').notNull(),
+  service: text('service').notNull(),
+  dedupKey: text('dedup_key').notNull(),
+  labels: jsonb('labels').$type<Record<string, string>>().notNull().default({}),
+  alertCount: integer('alert_count').notNull().default(1),
+  openedAt: timestamp('opened_at', { withTimezone: true }).notNull().defaultNow(),
+  lastAlertAt: timestamp('last_alert_at', { withTimezone: true }).notNull().defaultNow(),
+  resolvedAt: timestamp('resolved_at', { withTimezone: true }),
+})
+
+export type Incident = typeof incidents.$inferSelect
+
+export const alerts = pgTable('alerts', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  incidentId: uuid('incident_id').notNull().references(() => incidents.id),
+  payload: jsonb('payload').notNull(),
+  receivedAt: timestamp('received_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+export type Alert = typeof alerts.$inferSelect
