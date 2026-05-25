@@ -71,3 +71,17 @@ export const projects = pgTable(
 )
 
 export type Project = typeof projects.$inferSelect
+
+export const pluginInstances = pgTable('plugin_instances', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  projectId: uuid('project_id').notNull().references(() => projects.id),
+  pluginId: text('plugin_id').notNull(),
+  kind: text('kind').notNull(),
+  name: text('name').notNull(),
+  config: jsonb('config').$type<Record<string, unknown>>().notNull().default({}),
+  credentialsEncrypted: text('credentials_encrypted'),
+  enabled: boolean('enabled').notNull().default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+export type PluginInstance = typeof pluginInstances.$inferSelect
