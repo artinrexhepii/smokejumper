@@ -233,6 +233,46 @@ describe('data routes', () => {
     expect(missing.statusCode).toBe(404)
   })
 
+  it('403s the verdict endpoint for cross-org incidents', async () => {
+    const ctx = await setup()
+    const foreignIncident = await createIncident(ctx.db, {
+      projectId: ctx.otherProjectId,
+      alert: makeAlert(),
+    })
+    const foreignInvestigation = await createInvestigation(ctx.db, {
+      incidentId: foreignIncident.id,
+      budget: { maxToolCalls: 25, maxWallMs: 240_000 },
+    })
+    const foreignEvidence = await appendEvidence(ctx.db, {
+      investigationId: foreignInvestigation.id,
+      toolName: 'http_check',
+      input: { url: 'http://api/health' },
+      output: { status: 503 },
+      summary: 'health check failing',
+    })
+    await addFinding(ctx.db, {
+      investigationId: foreignInvestigation.id,
+      specialist: 'log-analyst',
+      summary: 'api down',
+      evidenceIds: [foreignEvidence.id],
+    })
+    const foreignDiagnosis = await createDiagnosis(ctx.db, {
+      investigationId: foreignInvestigation.id,
+      rootCause: 'memory leak',
+      confidence: 0.8,
+      evidenceChain: [{ claim: 'api OOM-killed', evidenceIds: [foreignEvidence.id], verified: true }],
+      remediation: 'roll back',
+      openQuestions: [],
+    })
+    const res = await ctx.app.inject({
+      method: 'POST',
+      url: `/api/diagnoses/${foreignDiagnosis.id}/verdict`,
+      cookies: ctx.cookies,
+      payload: { verdict: 'confirmed', note: 'unauthorized access' },
+    })
+    expect(res.statusCode).toBe(403)
+  })
+
   it('403s the audit log for non-members', async () => {
     const ctx = await setup()
     const res = await ctx.app.inject({
