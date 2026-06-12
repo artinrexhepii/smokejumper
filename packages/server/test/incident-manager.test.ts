@@ -99,7 +99,7 @@ describe('createIncidentManager', () => {
   })
 
   it('processes a batch of alerts in order', async () => {
-    const { db, projectId, bus } = await setup()
+    const { db, projectId, bus, events } = await setup()
     const manager = createIncidentManager({ db, bus })
     const results = await manager.ingest(projectId, [
       makeAlert({ dedupKey: 'k1' }),
@@ -108,5 +108,8 @@ describe('createIncidentManager', () => {
     ])
     expect(results.map((r) => r.isNew)).toEqual([true, true, false])
     expect(results[2]!.incident.id).toBe(results[0]!.incident.id)
+    expect(events).toHaveLength(2)
+    expect(events[0]).toMatchObject({ type: 'incident.opened' })
+    expect(events[1]).toMatchObject({ type: 'incident.opened' })
   })
 })

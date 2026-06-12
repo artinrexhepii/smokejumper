@@ -68,6 +68,7 @@ export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
       sameSite: 'lax',
       path: '/',
       expires: expiresAt,
+      secure: process.env.SMOKEJUMPER_SECURE_COOKIES === '1',
     })
     return { user: toPublicUser(user) }
   })
@@ -75,7 +76,10 @@ export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
   app.post('/api/auth/logout', async (request, reply) => {
     const token = request.cookies[SESSION_COOKIE]
     if (token) await deleteSession(deps.db, token)
-    reply.clearCookie(SESSION_COOKIE, { path: '/' })
+    reply.clearCookie(SESSION_COOKIE, {
+      path: '/',
+      secure: process.env.SMOKEJUMPER_SECURE_COOKIES === '1',
+    })
     return reply.code(204).send()
   })
 
