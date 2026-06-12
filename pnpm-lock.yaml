@@ -42,6 +42,22 @@ importers:
         specifier: ^3.25.0
         version: 3.25.76
 
+  packages/plugin-host:
+    dependencies:
+      '@smokejumper/db':
+        specifier: workspace:*
+        version: link:../db
+      '@smokejumper/plugin-sdk':
+        specifier: workspace:*
+        version: link:../plugin-sdk
+      zod:
+        specifier: ^3.25.0
+        version: 3.25.76
+    devDependencies:
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@electric-sql/pglite@0.5.4)(postgres@3.4.9)
+
   packages/plugin-sdk:
     devDependencies:
       zod:
