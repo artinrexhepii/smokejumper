@@ -7,6 +7,10 @@
   "exports": {
     ".": "./src/index.ts"
   },
+  "scripts": {
+    "seed": "node --experimental-strip-types src/seed.ts",
+    "start": "node --experimental-strip-types src/main.ts"
+  },
   "dependencies": {
     "@fastify/cookie": "^11.0.2",
     "@fastify/cors": "^11.2.0",

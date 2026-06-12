@@ -13,6 +13,7 @@ import Fastify, { type FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import type { IncidentBus } from './bus.ts'
 import { registerDataRoutes } from './routes.ts'
+import { registerSseRoute } from './sse.ts'
 
 export interface ServerDeps {
   db: Db
@@ -90,6 +91,7 @@ export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
   })
 
   registerDataRoutes(app, deps)
+  registerSseRoute(app, deps)
 
   return app
 }
