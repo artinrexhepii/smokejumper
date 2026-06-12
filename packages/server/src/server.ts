@@ -12,6 +12,7 @@ import {
 import Fastify, { type FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import type { IncidentBus } from './bus.ts'
+import { registerDataRoutes } from './routes.ts'
 
 export interface ServerDeps {
   db: Db
@@ -83,6 +84,8 @@ export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
     const orgs = await listOrganizationsForUser(deps.db, auth.user.id)
     return { user: toPublicUser(auth.user), orgs }
   })
+
+  registerDataRoutes(app, deps)
 
   return app
 }
