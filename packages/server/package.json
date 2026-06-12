@@ -1,0 +1,18 @@
+{
+  "name": "@smokejumper/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@fastify/cookie": "^11.0.2",
+    "@fastify/cors": "^11.2.0",
+    "@smokejumper/db": "workspace:*",
+    "@smokejumper/plugin-sdk": "workspace:*",
+    "fastify": "^5.9.0",
+    "zod": "^3.25.0"
+  }
+}
