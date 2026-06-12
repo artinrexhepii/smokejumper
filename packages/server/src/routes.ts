@@ -49,8 +49,6 @@ export function registerDataRoutes(app: FastifyInstance, deps: ServerDeps): void
 
   app.post('/api/diagnoses/:id/verdict', async (request, reply) => {
     const { id } = request.params as { id: string }
-    const parsed = verdictBody.safeParse(request.body)
-    if (!parsed.success) return reply.code(400).send({ error: 'invalid body' })
     const diagnosis = await getDiagnosis(deps.db, id)
     if (!diagnosis) return reply.code(404).send({ error: 'not found' })
     const investigation = await getInvestigation(deps.db, diagnosis.investigationId)
@@ -59,6 +57,8 @@ export function registerDataRoutes(app: FastifyInstance, deps: ServerDeps): void
     if (!project || !request.auth!.orgIds.includes(project.orgId)) {
       return reply.code(403).send({ error: 'forbidden' })
     }
+    const parsed = verdictBody.safeParse(request.body)
+    if (!parsed.success) return reply.code(400).send({ error: 'invalid body' })
     await setDiagnosisVerdict(deps.db, id, parsed.data)
     await appendAudit(deps.db, {
       orgId: project.orgId,

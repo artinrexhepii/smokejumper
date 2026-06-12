@@ -123,4 +123,18 @@ describe('buildServer', () => {
     })
     expect(meAfter.statusCode).toBe(401)
   })
+
+  it('rejects percent-encoded routes without session', async () => {
+    const { app } = await setup()
+    const res = await app.inject({ method: 'GET', url: '/%61pi/me' })
+    expect(res.statusCode).toBe(401)
+  })
+
+  it('allows logout without a session and clears cookie', async () => {
+    const { app } = await setup()
+    const res = await app.inject({ method: 'POST', url: '/api/auth/logout' })
+    expect(res.statusCode).toBe(204)
+    const clearCookie = res.cookies.find((c) => c.name === 'sj_session')
+    expect(clearCookie).toBeDefined()
+  })
 })

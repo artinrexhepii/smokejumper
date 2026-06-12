@@ -48,8 +48,8 @@ export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
   app.decorateRequest('auth', null)
 
   app.addHook('preHandler', async (request, reply) => {
-    const path = request.url.split('?')[0] ?? ''
-    if (!path.startsWith('/api/') || path === '/api/auth/login') return
+    const routeUrl = request.routeOptions.url ?? ''
+    if (!routeUrl.startsWith('/api/') || routeUrl === '/api/auth/login' || routeUrl === '/api/auth/logout') return
     const token = request.cookies[SESSION_COOKIE]
     const session = token ? await getSession(deps.db, token) : null
     if (!session) return reply.code(401).send({ error: 'unauthorized' })

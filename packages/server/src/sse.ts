@@ -20,6 +20,7 @@ export function registerSseRoute(app: FastifyInstance, deps: ServerDeps): void {
       connection: 'keep-alive',
       'access-control-allow-origin': process.env.DASHBOARD_ORIGIN ?? 'http://localhost:3000',
       'access-control-allow-credentials': 'true',
+      'Vary': 'Origin',
     })
     reply.raw.write(': connected\n\n')
     const unsubscribe = deps.bus.subscribe((event) => {
