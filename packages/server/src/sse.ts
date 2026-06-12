@@ -1,11 +1,18 @@
+import { getIncident, getProject } from '@smokejumper/db'
 import type { FastifyInstance } from 'fastify'
 import type { ServerDeps } from './server.ts'
 
 const HEARTBEAT_MS = 15_000
 
 export function registerSseRoute(app: FastifyInstance, deps: ServerDeps): void {
-  app.get('/api/incidents/:id/events', (request, reply) => {
+  app.get('/api/incidents/:id/events', async (request, reply) => {
     const { id } = request.params as { id: string }
+    const incident = await getIncident(deps.db, id)
+    if (!incident) return reply.code(404).send({ error: 'not found' })
+    const project = await getProject(deps.db, incident.projectId)
+    if (!project || !request.auth!.orgIds.includes(project.orgId)) {
+      return reply.code(403).send({ error: 'forbidden' })
+    }
     reply.hijack()
     reply.raw.writeHead(200, {
       'content-type': 'text/event-stream',
