@@ -11,15 +11,18 @@ import {
 } from '@smokejumper/db'
 import Fastify, { type FastifyInstance } from 'fastify'
 import { z } from 'zod'
+import type { PluginRegistry } from '@smokejumper/plugin-host'
 import type { IncidentBus } from './bus.ts'
+import { createIncidentManager } from './incident-manager.ts'
 import { registerDataRoutes } from './routes.ts'
+import { registerIngestRoutes } from './routes/ingest.ts'
 import { registerSseRoute } from './sse.ts'
 
 export interface ServerDeps {
   db: Db
   encryptionKey: string
   bus: IncidentBus
-  registry?: unknown
+  registry?: PluginRegistry
   investigator?: unknown
 }
 
@@ -92,6 +95,16 @@ export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
 
   registerDataRoutes(app, deps)
   registerSseRoute(app, deps)
+
+  if (deps.registry) {
+    const incidentManager = createIncidentManager({ db: deps.db, bus: deps.bus })
+    await registerIngestRoutes(app, {
+      db: deps.db,
+      encryptionKey: deps.encryptionKey,
+      registry: deps.registry,
+      incidentManager,
+    })
+  }
 
   return app
 }

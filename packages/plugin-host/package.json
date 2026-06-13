@@ -9,7 +9,13 @@
   },
   "dependencies": {
     "@smokejumper/db": "workspace:*",
+    "@smokejumper/plugin-docker": "workspace:*",
+    "@smokejumper/plugin-github-deploys": "workspace:*",
+    "@smokejumper/plugin-http": "workspace:*",
     "@smokejumper/plugin-sdk": "workspace:*",
+    "@smokejumper/plugin-sentry": "workspace:*",
+    "@smokejumper/plugin-slack": "workspace:*",
+    "@smokejumper/plugin-webhook": "workspace:*",
     "zod": "^3.25.0"
   },
   "devDependencies": {
