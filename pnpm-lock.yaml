@@ -95,6 +95,26 @@ importers:
         specifier: ^3.25.0
         version: 3.25.76
 
+  plugins/github-deploys:
+    dependencies:
+      '@smokejumper/plugin-sdk':
+        specifier: workspace:*
+        version: link:../../packages/plugin-sdk
+    devDependencies:
+      zod:
+        specifier: ^3.25.0
+        version: 3.25.76
+
+  plugins/http:
+    dependencies:
+      '@smokejumper/plugin-sdk':
+        specifier: workspace:*
+        version: link:../../packages/plugin-sdk
+    devDependencies:
+      zod:
+        specifier: ^3.25.0
+        version: 3.25.76
+
   plugins/sentry:
     dependencies:
       '@smokejumper/plugin-sdk':
