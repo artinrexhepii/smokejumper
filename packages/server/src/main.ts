@@ -1,4 +1,5 @@
 import { createDb, runMigrations } from '@smokejumper/db'
+import { createBuiltinRegistry, startNotificationDispatcher } from '@smokejumper/plugin-host'
 import { createBus } from './bus.ts'
 import { buildServer } from './server.ts'
 
@@ -11,5 +12,9 @@ if (!encryptionKey) {
 const url = process.env.DATABASE_URL ?? 'postgres://smokejumper:smokejumper@localhost:5432/smokejumper'
 const db = createDb(url)
 await runMigrations(db)
-const app = await buildServer({ db, encryptionKey, bus: createBus() })
+
+const bus = createBus()
+const registry = createBuiltinRegistry()
+startNotificationDispatcher({ db, encryptionKey, registry, bus })
+const app = await buildServer({ db, encryptionKey, bus, registry })
 await app.listen({ port: Number(process.env.PORT ?? 3400), host: '0.0.0.0' })
