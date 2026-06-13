@@ -11,6 +11,8 @@ import { createRegistry, type HostTool } from '@smokejumper/plugin-host'
 import type { IncidentEvent } from '@smokejumper/plugin-sdk'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
+import { BudgetExceededError } from '../src/budget'
+import type { ModelDriver } from '../src/driver'
 import { createInvestigator, type IncidentBus } from '../src/investigator'
 
 const encryptionKey = Buffer.alloc(32, 7).toString('base64')
@@ -154,6 +156,39 @@ describe('investigate (fake driver)', () => {
     expect(detail!.evidence).toHaveLength(1)
     expect(detail!.findings).toHaveLength(1)
     expect(detail!.diagnosis).toBeDefined()
+  })
+
+  it('completes as budget_exceeded (not failed) when the budget aborts before synthesis', async () => {
+    const db = await createTestDb()
+    const { incident } = await seedIncident(db)
+    const { bus } = collectingBus()
+    const driver: ModelDriver = {
+      async triage() {
+        throw new BudgetExceededError('wall-clock budget exhausted during triage')
+      },
+      async plan() {
+        return { specialists: [] }
+      },
+      async runSpecialist() {
+        return { summary: '', evidenceIds: [] }
+      },
+      async synthesize() {
+        return { rootCause: '', confidence: 0.5, evidenceChain: [], remediation: '', openQuestions: [] }
+      },
+    }
+    const investigator = createInvestigator({
+      db,
+      registry: createRegistry(),
+      bus,
+      encryptionKey,
+      models: 'fake',
+      _driver: driver,
+      _getTools: async () => [],
+    })
+    await expect(investigator.investigate(incident.id)).rejects.toBeInstanceOf(BudgetExceededError)
+    const detail = await getIncidentDetail(db, incident.id)
+    expect(detail?.investigation?.status).toBe('budget_exceeded')
+    expect(detail?.incident.status).toBe('investigating')
   })
 
   it('stores incident memory after diagnosis when an embedder is configured', async () => {

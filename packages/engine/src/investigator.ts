@@ -193,11 +193,12 @@ export function createInvestigator(opts: CreateInvestigatorOptions): Investigato
           stats: { toolCalls: stats.toolCalls, wallMs: stats.wallMs, specialists: findings.length },
         })
       } catch (err) {
+        const budgetExhausted = budget.exceeded || err instanceof BudgetExceededError
         const message = err instanceof Error ? err.message : String(err)
         publish('investigation.milestone', { phase: 'error', error: message })
         const stats = budget.stats()
         await completeInvestigation(opts.db, investigation.id, {
-          status: 'failed',
+          status: budgetExhausted ? 'budget_exceeded' : 'failed',
           stats: { toolCalls: stats.toolCalls, wallMs: stats.wallMs, specialists: 0 },
         })
         throw err
