@@ -125,6 +125,16 @@ importers:
         specifier: ^3.25.0
         version: 3.25.76
 
+  plugins/slack:
+    dependencies:
+      '@smokejumper/plugin-sdk':
+        specifier: workspace:*
+        version: link:../../packages/plugin-sdk
+    devDependencies:
+      zod:
+        specifier: ^3.25.0
+        version: 3.25.76
+
   plugins/webhook:
     dependencies:
       '@smokejumper/plugin-sdk':
