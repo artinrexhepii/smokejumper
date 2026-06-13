@@ -111,6 +111,9 @@ importers:
       '@smokejumper/db':
         specifier: workspace:*
         version: link:../db
+      '@smokejumper/engine':
+        specifier: workspace:*
+        version: link:../engine
       '@smokejumper/plugin-host':
         specifier: workspace:*
         version: link:../plugin-host

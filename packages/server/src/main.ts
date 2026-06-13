@@ -1,4 +1,5 @@
 import { createDb, runMigrations } from '@smokejumper/db'
+import { createInvestigator } from '@smokejumper/engine'
 import { createBuiltinRegistry, startNotificationDispatcher } from '@smokejumper/plugin-host'
 import { createBus } from './bus.ts'
 import { buildServer } from './server.ts'
@@ -16,5 +17,6 @@ await runMigrations(db)
 const bus = createBus()
 const registry = createBuiltinRegistry()
 startNotificationDispatcher({ db, encryptionKey, registry, bus })
-const app = await buildServer({ db, encryptionKey, bus, registry })
+const investigator = createInvestigator({ db, registry, bus, encryptionKey })
+const app = await buildServer({ db, encryptionKey, bus, registry, investigator })
 await app.listen({ port: Number(process.env.PORT ?? 3400), host: '0.0.0.0' })

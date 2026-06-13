@@ -15,6 +15,7 @@
     "@fastify/cookie": "^11.0.2",
     "@fastify/cors": "^11.2.0",
     "@smokejumper/db": "workspace:*",
+    "@smokejumper/engine": "workspace:*",
     "@smokejumper/plugin-host": "workspace:*",
     "@smokejumper/plugin-sdk": "workspace:*",
     "fastify": "^5.9.0",

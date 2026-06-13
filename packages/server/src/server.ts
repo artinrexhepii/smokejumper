@@ -14,6 +14,7 @@ import { z } from 'zod'
 import type { PluginRegistry } from '@smokejumper/plugin-host'
 import type { IncidentBus } from './bus.ts'
 import { createIncidentManager } from './incident-manager.ts'
+import { investigateOnOpen, type InvestigatorLike } from './investigate-on-open.ts'
 import { registerDataRoutes } from './routes.ts'
 import { registerIngestRoutes } from './routes/ingest.ts'
 import { registerSseRoute } from './sse.ts'
@@ -23,7 +24,7 @@ export interface ServerDeps {
   encryptionKey: string
   bus: IncidentBus
   registry?: PluginRegistry
-  investigator?: unknown
+  investigator?: InvestigatorLike
 }
 
 declare module 'fastify' {
@@ -103,6 +104,13 @@ export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
       encryptionKey: deps.encryptionKey,
       registry: deps.registry,
       incidentManager,
+    })
+  }
+
+  if (deps.investigator) {
+    const stopInvestigating = investigateOnOpen({ bus: deps.bus, investigator: deps.investigator })
+    app.addHook('onClose', async () => {
+      stopInvestigating()
     })
   }
 
