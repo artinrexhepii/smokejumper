@@ -6,7 +6,9 @@ import { formatAgo } from '../../../lib/format'
 import { useIncidentEvents } from '../../../lib/useIncidentEvents'
 import { useSession } from '../../../lib/useSession'
 import { SeverityBadge, StatusBadge } from '../../../components/Badge'
+import { DiagnosisCard } from '../../../components/DiagnosisCard'
 import { EvidenceItem } from '../../../components/EvidenceItem'
+import { FindingsList } from '../../../components/FindingsList'
 import { TraceTimeline } from '../../../components/TraceTimeline'
 
 export default function IncidentPage({ params }: { params: Promise<{ id: string }> }) {
@@ -32,7 +34,7 @@ export default function IncidentPage({ params }: { params: Promise<{ id: string 
   if (error) return <p className="error-text">{error}</p>
   if (!detail) return <p className="loading">Loading incident…</p>
 
-  const { incident, investigation, evidence } = detail
+  const { incident, investigation, findings, diagnosis, evidence } = detail
 
   return (
     <>
@@ -61,6 +63,18 @@ export default function IncidentPage({ params }: { params: Promise<{ id: string 
         evidence={evidence}
         investigating={incident.status === 'open' || incident.status === 'investigating'}
       />
+      <section className="card">
+        <h2>Findings</h2>
+        <FindingsList findings={findings} evidence={evidence} />
+      </section>
+      {diagnosis ? (
+        <DiagnosisCard diagnosis={diagnosis} evidence={evidence} />
+      ) : (
+        <section className="card">
+          <h2>Diagnosis</h2>
+          <p className="empty">No diagnosis yet — the investigation is still running.</p>
+        </section>
+      )}
       <section className="card">
         <h2>Evidence log</h2>
         {evidence.length === 0 ? (
