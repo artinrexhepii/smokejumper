@@ -1,0 +1,59 @@
+services:
+  shop-api:
+    build:
+      context: .
+      dockerfile: demo/Dockerfile
+    image: smokejumper-demo
+    command: ["node", "dist/serve-shop-api.js"]
+    environment:
+      PORT: "3401"
+      WORKER_URL: http://worker:3402
+    ports:
+      - "3401:3401"
+    # small enough that the oom scenario genuinely OOM-kills the container
+    mem_limit: 256m
+    restart: unless-stopped
+
+  worker:
+    image: smokejumper-demo
+    command: ["node", "dist/serve-worker.js"]
+    environment:
+      PORT: "3402"
+    restart: unless-stopped
+
+  watchdog:
+    image: smokejumper-demo
+    command: ["node", "dist/serve-watchdog.js"]
+    environment:
+      SHOP_API_URL: http://shop-api:3401
+      WORKER_URL: http://worker:3402
+      SMOKEJUMPER_INGEST_URL: http://server:3400/ingest/00000000-0000-4000-8000-000000000001
+      SMOKEJUMPER_WEBHOOK_TOKEN: demo-token
+    depends_on:
+      server:
+        condition: service_healthy
+      shop-api:
+        condition: service_started
+    restart: unless-stopped
+
+  seed:
+    image: smokejumper-server
+    command: ["node", "dist/seed.js"]
+    environment:
+      DATABASE_URL: postgres://smokejumper:smokejumper@postgres:5432/smokejumper
+      SMOKEJUMPER_ENCRYPTION_KEY: ${SMOKEJUMPER_ENCRYPTION_KEY:?missing - copy .env.example to .env and generate a key}
+    depends_on:
+      server:
+        condition: service_healthy
+    restart: "no"
+
+  demo-seed:
+    image: smokejumper-demo
+    command: ["node", "dist/seed-demo.js"]
+    environment:
+      DATABASE_URL: postgres://smokejumper:smokejumper@postgres:5432/smokejumper
+      SMOKEJUMPER_ENCRYPTION_KEY: ${SMOKEJUMPER_ENCRYPTION_KEY:?missing - copy .env.example to .env and generate a key}
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+    restart: "no"

@@ -6,6 +6,7 @@ import { pluginInstances, type PluginInstance } from './schema.ts'
 export async function createPluginInstance(
   db: Db,
   input: {
+    id?: string
     projectId: string
     pluginId: string
     kind: string
@@ -22,6 +23,7 @@ export async function createPluginInstance(
   const [instance] = await db
     .insert(pluginInstances)
     .values({
+      id: input.id,
       projectId: input.projectId,
       pluginId: input.pluginId,
       kind: input.kind,

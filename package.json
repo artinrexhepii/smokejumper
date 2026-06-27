@@ -8,7 +8,9 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "dev:dashboard": "pnpm --filter @smokejumper/dashboard dev",
-    "chaos": "pnpm --filter @smokejumper/demo chaos"
+    "chaos": "pnpm --filter @smokejumper/demo chaos",
+    "demo:up": "docker compose -f docker-compose.yml -f demo/docker-compose.yml up -d --build",
+    "demo:down": "docker compose -f docker-compose.yml -f demo/docker-compose.yml down"
   },
   "devDependencies": {
     "@types/node": "^20.17.0",
