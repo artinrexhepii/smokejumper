@@ -34,6 +34,8 @@ services:
         condition: service_healthy
       shop-api:
         condition: service_started
+      demo-seed:
+        condition: service_completed_successfully
     restart: unless-stopped
 
   seed:
