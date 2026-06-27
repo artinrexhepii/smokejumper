@@ -49,6 +49,37 @@ importers:
         specifier: ^19.2.0
         version: 19.2.3(@types/react@19.2.17)
 
+  demo:
+    dependencies:
+      '@smokejumper/db':
+        specifier: workspace:*
+        version: link:../packages/db
+      fastify:
+        specifier: ^5.9.0
+        version: 5.9.0
+    devDependencies:
+      '@smokejumper/engine':
+        specifier: workspace:*
+        version: link:../packages/engine
+      '@smokejumper/plugin-host':
+        specifier: workspace:*
+        version: link:../packages/plugin-host
+      '@smokejumper/plugin-sdk':
+        specifier: workspace:*
+        version: link:../packages/plugin-sdk
+      '@smokejumper/server':
+        specifier: workspace:*
+        version: link:../packages/server
+      tsup:
+        specifier: ^8.5.0
+        version: 8.5.1(postcss@8.5.16)(tsx@4.23.0)(typescript@5.9.3)
+      tsx:
+        specifier: ^4.23.0
+        version: 4.23.0
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+
   packages/db:
     dependencies:
       '@electric-sql/pglite':

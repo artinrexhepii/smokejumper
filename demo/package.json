@@ -1,0 +1,25 @@
+{
+  "name": "@smokejumper/demo",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsup",
+    "chaos": "tsx src/chaos.ts",
+    "seed:demo": "tsx src/seed-demo.ts"
+  },
+  "dependencies": {
+    "@smokejumper/db": "workspace:*",
+    "fastify": "^5.9.0"
+  },
+  "devDependencies": {
+    "@smokejumper/engine": "workspace:*",
+    "@smokejumper/plugin-host": "workspace:*",
+    "@smokejumper/plugin-sdk": "workspace:*",
+    "@smokejumper/server": "workspace:*",
+    "tsup": "^8.5.0",
+    "tsx": "^4.23.0",
+    "zod": "^3.25.76"
+  }
+}
