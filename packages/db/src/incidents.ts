@@ -1,4 +1,4 @@
-import { and, desc, eq, gt, inArray, sql } from 'drizzle-orm'
+import { and, desc, eq, gt, ne, sql } from 'drizzle-orm'
 import type { NormalizedAlert } from '@smokejumper/plugin-sdk'
 import type { Db } from './db.ts'
 import { listEvidence, listFindings } from './investigations.ts'
@@ -29,7 +29,7 @@ export async function findOpenIncidentByDedupKey(
       and(
         eq(incidents.projectId, projectId),
         eq(incidents.dedupKey, dedupKey),
-        inArray(incidents.status, ['open', 'investigating']),
+        ne(incidents.status, 'resolved'),
         gt(incidents.lastAlertAt, cutoff),
       ),
     )

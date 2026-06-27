@@ -85,6 +85,14 @@ describe('incidents', () => {
     expect((await getIncident(db, incident.id))?.resolvedAt).toBeInstanceOf(Date)
   })
 
+  it('matches diagnosed incidents (still unresolved)', async () => {
+    const { db, projectId } = await setup()
+    const incident = await createIncident(db, { projectId, alert: makeAlert() })
+    await updateIncidentStatus(db, incident.id, 'diagnosed')
+    const found = await findOpenIncidentByDedupKey(db, projectId, 'api-oom', 900_000)
+    expect(found?.id).toBe(incident.id)
+  })
+
   it('ignores incidents whose last alert is outside the window', async () => {
     const { db, projectId } = await setup()
     const incident = await createIncident(db, { projectId, alert: makeAlert() })
