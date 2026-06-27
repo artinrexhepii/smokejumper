@@ -10,6 +10,7 @@ import {
   runMigrations,
   type Db,
 } from '@smokejumper/db'
+import { pathToFileURL } from 'node:url'
 
 export async function seed(db: Db): Promise<{ orgId: string; userId: string; projectId: string }> {
   const org =
@@ -25,7 +26,7 @@ export async function seed(db: Db): Promise<{ orgId: string; userId: string; pro
   return { orgId: org.id, userId: user.id, projectId: project.id }
 }
 
-const isMain = process.argv[1]?.endsWith('seed.ts') ?? false
+const isMain = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false
 
 if (isMain) {
   const url = process.env.DATABASE_URL ?? 'postgres://smokejumper:smokejumper@localhost:5432/smokejumper'
