@@ -7,7 +7,8 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "dev:dashboard": "pnpm --filter @smokejumper/dashboard dev"
+    "dev:dashboard": "pnpm --filter @smokejumper/dashboard dev",
+    "chaos": "pnpm --filter @smokejumper/demo chaos"
   },
   "devDependencies": {
     "@types/node": "^20.17.0",
