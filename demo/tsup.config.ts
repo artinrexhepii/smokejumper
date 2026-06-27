@@ -13,4 +13,7 @@ export default defineConfig({
   target: 'node22',
   clean: true,
   noExternal: [/^@smokejumper\//],
+  // keep every npm dep external (resolved from the hoisted prod node_modules at runtime);
+  // noExternal wins over this, so only @smokejumper/* source is bundled
+  external: [/^[^./]/],
 })
