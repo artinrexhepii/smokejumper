@@ -19,6 +19,9 @@ WORKDIR /app
 COPY --from=proddeps --chown=node:node /repo/node_modules ./node_modules
 COPY --from=build --chown=node:node /repo/packages/server/dist ./dist
 COPY --from=build --chown=node:node /repo/packages/server/package.json ./package.json
+# runMigrations reads these SQL files via new URL('../migrations', import.meta.url);
+# from the bundled dist/ that resolves to /app/migrations at runtime
+COPY --from=build --chown=node:node /repo/packages/db/migrations ./migrations
 USER node
 EXPOSE 3400
 CMD ["node", "dist/main.js"]
