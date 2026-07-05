@@ -176,7 +176,7 @@ export function createDockerTelemetrySource(): TelemetrySource<DockerConfig> {
       id: 'docker',
       name: 'Docker',
       version: '0.1.0',
-      sdkVersion: '0.1.0',
+      sdkVersion: '0.2.0',
       kind: 'telemetry-source',
       description: 'Inspects containers, logs, and resource usage via the Docker Engine API',
       configSchema: dockerConfigSchema,

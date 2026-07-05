@@ -11,7 +11,7 @@ export function createHttpTelemetrySource(): TelemetrySource<HttpConfig> {
       id: 'http',
       name: 'HTTP Check',
       version: '0.1.0',
-      sdkVersion: '0.1.0',
+      sdkVersion: '0.2.0',
       kind: 'telemetry-source',
       description: 'Probes HTTP endpoints for status and latency',
       configSchema: httpConfigSchema,

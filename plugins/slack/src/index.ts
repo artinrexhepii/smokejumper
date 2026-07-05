@@ -1,12 +1,10 @@
 import { z } from 'zod'
 import type { NotificationSink } from '@smokejumper/plugin-sdk'
 
-export const slackConfigSchema = z.object({
-  botToken: z.string().min(1),
-  channel: z.string().min(1),
-})
+export const slackConfigSchema = z.object({ channel: z.string().min(1) })
+export const slackCredentialSchema = z.object({ botToken: z.string().min(1) })
 
-export type SlackConfig = z.infer<typeof slackConfigSchema>
+export type SlackConfig = z.infer<typeof slackConfigSchema> & z.infer<typeof slackCredentialSchema>
 
 export function toMrkdwn(markdown: string): string {
   return markdown.replace(/\*\*(.+?)\*\*/g, '*$1*')
@@ -18,10 +16,11 @@ export function createSlackNotificationSink(): NotificationSink<SlackConfig> {
       id: 'slack',
       name: 'Slack',
       version: '0.1.0',
-      sdkVersion: '0.1.0',
+      sdkVersion: '0.2.0',
       kind: 'notification-sink',
       description: 'Posts incident events to a Slack channel via chat.postMessage',
       configSchema: slackConfigSchema,
+      credentialSchema: slackCredentialSchema,
     },
     async notify(_event, rendering, ctx) {
       try {

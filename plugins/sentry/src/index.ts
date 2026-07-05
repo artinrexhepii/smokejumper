@@ -2,9 +2,10 @@ import { createHmac, timingSafeEqual } from 'node:crypto'
 import { z } from 'zod'
 import type { AlertSource, NormalizedAlert, Severity } from '@smokejumper/plugin-sdk'
 
-export const sentryConfigSchema = z.object({ clientSecret: z.string().min(1) })
+export const sentryConfigSchema = z.object({})
+export const sentryCredentialSchema = z.object({ clientSecret: z.string().min(1) })
 
-export type SentryConfig = z.infer<typeof sentryConfigSchema>
+export type SentryConfig = z.infer<typeof sentryConfigSchema> & z.infer<typeof sentryCredentialSchema>
 
 const sentryPayloadSchema = z.object({
   data: z.object({
@@ -60,10 +61,11 @@ export function createSentryAlertSource(): AlertSource<SentryConfig> {
       id: 'sentry',
       name: 'Sentry',
       version: '0.1.0',
-      sdkVersion: '0.1.0',
+      sdkVersion: '0.2.0',
       kind: 'alert-source',
       description: 'Ingests Sentry issue alert webhooks',
       configSchema: sentryConfigSchema,
+      credentialSchema: sentryCredentialSchema,
     },
     async verify(req, config) {
       const signature = req.headers['sentry-hook-signature']

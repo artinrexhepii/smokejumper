@@ -2,9 +2,10 @@ import { timingSafeEqual } from 'node:crypto'
 import { z } from 'zod'
 import { severitySchema, type AlertSource, type NormalizedAlert } from '@smokejumper/plugin-sdk'
 
-export const webhookConfigSchema = z.object({ token: z.string().min(1) })
+export const webhookConfigSchema = z.object({})
+export const webhookCredentialSchema = z.object({ token: z.string().min(1) })
 
-export type WebhookConfig = z.infer<typeof webhookConfigSchema>
+export type WebhookConfig = z.infer<typeof webhookConfigSchema> & z.infer<typeof webhookCredentialSchema>
 
 export const webhookPayloadSchema = z.object({
   title: z.string().min(1),
@@ -41,10 +42,11 @@ export function createWebhookAlertSource(): AlertSource<WebhookConfig> {
       id: 'webhook',
       name: 'Generic Webhook',
       version: '0.1.0',
-      sdkVersion: '0.1.0',
+      sdkVersion: '0.2.0',
       kind: 'alert-source',
       description: 'Ingests alerts from any system that can POST JSON with a shared token',
       configSchema: webhookConfigSchema,
+      credentialSchema: webhookCredentialSchema,
     },
     async verify(req, config) {
       const token = req.headers['x-smokejumper-token']

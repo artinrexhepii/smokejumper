@@ -3,10 +3,11 @@ import type { SourceContext, TelemetrySource } from '@smokejumper/plugin-sdk'
 
 export const githubDeploysConfigSchema = z.object({
   repo: z.string().regex(/^[\w.-]+\/[\w.-]+$/, 'repo must be "owner/name"'),
-  token: z.string().min(1),
 })
+export const githubDeploysCredentialSchema = z.object({ token: z.string().min(1) })
 
-export type GithubDeploysConfig = z.infer<typeof githubDeploysConfigSchema>
+export type GithubDeploysConfig = z.infer<typeof githubDeploysConfigSchema> &
+  z.infer<typeof githubDeploysCredentialSchema>
 
 const API = 'https://api.github.com'
 
@@ -28,10 +29,11 @@ export function createGithubDeploysTelemetrySource(): TelemetrySource<GithubDepl
       id: 'github-deploys',
       name: 'GitHub Deploys',
       version: '0.1.0',
-      sdkVersion: '0.1.0',
+      sdkVersion: '0.2.0',
       kind: 'telemetry-source',
       description: 'Correlates incidents with recent GitHub deployments and commits',
       configSchema: githubDeploysConfigSchema,
+      credentialSchema: githubDeploysCredentialSchema,
     },
     async healthCheck(ctx) {
       try {
