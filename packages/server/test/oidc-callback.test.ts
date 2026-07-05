@@ -152,6 +152,7 @@ describe('GET /api/auth/oidc/callback', () => {
       cookies: { sj_oidc: oidcCookie },
     })
     expect(res.statusCode).toBe(500)
+    expect(await getUserByEmail(ctx.db, 'alice@example.com')).toBeUndefined()
   })
 
   it('404s when oidc is disabled', async () => {

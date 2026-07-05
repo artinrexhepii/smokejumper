@@ -72,6 +72,13 @@ export function registerAuthRoutes(app: FastifyInstance, deps: ServerDeps): void
       return reply.code(400).send({ error: 'oidc verification failed' })
     }
 
+    const org = await getOrganizationBySlug(deps.db, oidc.defaultOrg)
+    if (!org) {
+      return reply
+        .code(500)
+        .send({ error: `oidc default org "${oidc.defaultOrg}" does not exist` })
+    }
+
     const existing = await getUserByEmail(deps.db, profile.email)
     const account =
       existing ??
@@ -80,13 +87,6 @@ export function registerAuthRoutes(app: FastifyInstance, deps: ServerDeps): void
         name: profile.name,
         password: randomBytes(32).toString('base64'),
       }))
-
-    const org = await getOrganizationBySlug(deps.db, oidc.defaultOrg)
-    if (!org) {
-      return reply
-        .code(500)
-        .send({ error: `oidc default org "${oidc.defaultOrg}" does not exist` })
-    }
 
     const memberships = await listOrganizationsForUser(deps.db, account.id)
     if (!memberships.some((o) => o.id === org.id)) {
@@ -104,6 +104,8 @@ export function registerAuthRoutes(app: FastifyInstance, deps: ServerDeps): void
         detail: { email: account.email },
       })
     }
+
+    const { token, expiresAt } = await createSession(deps.db, account.id)
     await appendAudit(deps.db, {
       orgId: org.id,
       actorType: 'user',
@@ -113,8 +115,6 @@ export function registerAuthRoutes(app: FastifyInstance, deps: ServerDeps): void
       subjectId: account.id,
       detail: { email: account.email },
     })
-
-    const { token, expiresAt } = await createSession(deps.db, account.id)
     reply.setCookie(SESSION_COOKIE, token, {
       httpOnly: true,
       sameSite: 'lax',
