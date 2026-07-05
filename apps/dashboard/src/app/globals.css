@@ -488,3 +488,45 @@ details > summary {
   align-items: center;
   gap: 0.6rem;
 }
+
+.settings-selects {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.instance-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.instance-list li + li {
+  border-top: 1px solid var(--border);
+}
+
+.instance-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 1rem;
+  background: var(--surface);
+}
+
+.instance-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.health-checking { color: var(--text-dim); }
+.health-ok { color: var(--ok); }
+.health-error { color: var(--danger); }
+
+.confirm-delete {
+  display: flex;
+  gap: 0.4rem;
+}
