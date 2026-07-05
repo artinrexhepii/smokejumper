@@ -482,3 +482,9 @@ label > textarea {
 details > summary {
   cursor: pointer;
 }
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ApiError, me, type SessionInfo } from './api'
+import { ApiError, me, type Org, type OrgRole, type SessionInfo } from './api'
 
 export interface SessionState {
   session: SessionInfo | null
@@ -34,4 +34,12 @@ export function useSession(): SessionState {
   }, [router])
 
   return state
+}
+
+export function canManageOrg(role: OrgRole | undefined): boolean {
+  return role === 'owner' || role === 'admin'
+}
+
+export function canManageAnyOrg(orgs: Org[]): boolean {
+  return orgs.some((org) => canManageOrg(org.role))
 }

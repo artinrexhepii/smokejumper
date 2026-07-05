@@ -13,8 +13,8 @@ vi.mock('../src/lib/api', async (importOriginal) => {
   return { ...actual, me: vi.fn() }
 })
 
-import { ApiError, me } from '../src/lib/api'
-import { useSession } from '../src/lib/useSession'
+import { ApiError, me, type Org } from '../src/lib/api'
+import { canManageAnyOrg, canManageOrg, useSession } from '../src/lib/useSession'
 
 const mockedMe = vi.mocked(me)
 
@@ -49,5 +49,30 @@ describe('useSession', () => {
     await waitFor(() => expect(result.current.error).not.toBeNull())
     expect(result.current.loading).toBe(false)
     expect(replace).not.toHaveBeenCalled()
+  })
+})
+
+describe('canManageOrg', () => {
+  it('allows owner and admin, denies member and undefined', () => {
+    expect(canManageOrg('owner')).toBe(true)
+    expect(canManageOrg('admin')).toBe(true)
+    expect(canManageOrg('member')).toBe(false)
+    expect(canManageOrg(undefined)).toBe(false)
+  })
+})
+
+describe('canManageAnyOrg', () => {
+  const org = (role: Org['role']): Org => ({ id: 'o', name: 'Acme', slug: 'acme', role })
+
+  it('is true when at least one org is owner or admin', () => {
+    expect(canManageAnyOrg([org('member'), org('admin')])).toBe(true)
+  })
+
+  it('is false when every org is a member', () => {
+    expect(canManageAnyOrg([org('member')])).toBe(false)
+  })
+
+  it('is false for an empty org list', () => {
+    expect(canManageAnyOrg([])).toBe(false)
   })
 })
