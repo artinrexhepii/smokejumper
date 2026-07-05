@@ -2,6 +2,7 @@ import { createDb, runMigrations } from '@smokejumper/db'
 import { createInvestigator } from '@smokejumper/engine'
 import { createBuiltinRegistry, startNotificationDispatcher } from '@smokejumper/plugin-host'
 import { createBus } from './bus.ts'
+import { createOidcProvider, parseOidcEnv } from './oidc.ts'
 import { buildServer } from './server.ts'
 
 const encryptionKey = process.env.SMOKEJUMPER_ENCRYPTION_KEY
@@ -18,5 +19,7 @@ const bus = createBus()
 const registry = createBuiltinRegistry()
 startNotificationDispatcher({ db, encryptionKey, registry, bus })
 const investigator = createInvestigator({ db, registry, bus, encryptionKey })
-const app = await buildServer({ db, encryptionKey, bus, registry, investigator })
+const oidcConfig = parseOidcEnv()
+const oidc = oidcConfig ? await createOidcProvider(oidcConfig) : undefined
+const app = await buildServer({ db, encryptionKey, bus, registry, investigator, oidc })
 await app.listen({ port: Number(process.env.PORT ?? 3400), host: '0.0.0.0' })

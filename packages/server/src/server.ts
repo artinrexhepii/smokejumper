@@ -16,7 +16,9 @@ import type { PluginRegistry } from '@smokejumper/plugin-host'
 import type { IncidentBus } from './bus.ts'
 import { createIncidentManager } from './incident-manager.ts'
 import { investigateOnOpen, type InvestigatorLike } from './investigate-on-open.ts'
+import type { OidcProvider } from './oidc.ts'
 import { registerDataRoutes } from './routes.ts'
+import { registerAuthRoutes } from './routes/auth-oidc.ts'
 import { registerIngestRoutes } from './routes/ingest.ts'
 import { registerInstanceRoutes } from './routes/instances.ts'
 import { registerPluginCatalogRoute } from './routes/plugins.ts'
@@ -28,6 +30,7 @@ export interface ServerDeps {
   bus: IncidentBus
   registry?: PluginRegistry
   investigator?: InvestigatorLike
+  oidc?: OidcProvider
 }
 
 declare module 'fastify' {
@@ -38,6 +41,14 @@ declare module 'fastify' {
 
 export const SESSION_COOKIE = 'sj_session'
 
+const PUBLIC_API_ROUTES = new Set([
+  '/api/auth/login',
+  '/api/auth/logout',
+  '/api/auth/config',
+  '/api/auth/oidc/start',
+  '/api/auth/oidc/callback',
+])
+
 const loginBody = z.object({ email: z.string(), password: z.string() })
 
 function toPublicUser(user: User): { id: string; email: string; name: string } {
@@ -46,7 +57,7 @@ function toPublicUser(user: User): { id: string; email: string; name: string } {
 
 export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
   const app = Fastify({ forceCloseConnections: true })
-  await app.register(cookie)
+  await app.register(cookie, { secret: deps.encryptionKey })
   await app.register(cors, {
     origin: process.env.DASHBOARD_ORIGIN ?? 'http://localhost:3000',
     credentials: true,
@@ -57,7 +68,7 @@ export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
 
   app.addHook('preHandler', async (request, reply) => {
     const routeUrl = request.routeOptions.url ?? ''
-    if (!routeUrl.startsWith('/api/') || routeUrl === '/api/auth/login' || routeUrl === '/api/auth/logout') return
+    if (!routeUrl.startsWith('/api/') || PUBLIC_API_ROUTES.has(routeUrl)) return
     const token = request.cookies[SESSION_COOKIE]
     const session = token ? await getSession(deps.db, token) : null
     if (!session) return reply.code(401).send({ error: 'unauthorized' })
@@ -105,6 +116,7 @@ export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
   })
 
   registerDataRoutes(app, deps)
+  registerAuthRoutes(app, deps)
   registerSseRoute(app, deps)
 
   if (deps.registry) {
