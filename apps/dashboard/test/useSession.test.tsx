@@ -27,7 +27,7 @@ describe('useSession', () => {
   it('exposes the session once /api/me resolves', async () => {
     const session = {
       user: { id: 'u1', email: 'a@example.com', name: 'A' },
-      orgs: [{ id: 'o1', name: 'Acme', slug: 'acme' }],
+      orgs: [{ id: 'o1', name: 'Acme', slug: 'acme', role: 'owner' as const }],
     }
     mockedMe.mockResolvedValue(session)
     const { result } = renderHook(() => useSession())

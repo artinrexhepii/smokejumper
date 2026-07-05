@@ -3,6 +3,14 @@ export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3400
 export type Severity = 'critical' | 'high' | 'medium' | 'low' | 'info'
 export type IncidentStatus = 'open' | 'investigating' | 'diagnosed' | 'resolved'
 export type Verdict = 'confirmed' | 'rejected' | 'partial'
+export type OrgRole = 'owner' | 'admin' | 'member'
+export type PluginKind =
+  | 'alert-source'
+  | 'telemetry-source'
+  | 'context-source'
+  | 'notification-sink'
+  | 'action-sink'
+export type ConfigFieldType = 'string' | 'number' | 'boolean' | 'url' | 'enum'
 
 export interface User {
   id: string
@@ -14,6 +22,7 @@ export interface Org {
   id: string
   name: string
   slug: string
+  role: OrgRole
 }
 
 export interface Project {
@@ -101,6 +110,62 @@ export interface IncidentEvent {
   payload: Record<string, unknown>
 }
 
+export interface PublicManifest {
+  id: string
+  name: string
+  version: string
+  kind: PluginKind
+  description: string
+  sdkVersion: string
+}
+
+export interface ConfigFieldDescriptor {
+  key: string
+  type: ConfigFieldType
+  required: boolean
+  secret: boolean
+  description?: string
+  default?: string | number | boolean
+  enumValues?: string[]
+}
+
+export interface ConfigDescriptor {
+  config: ConfigFieldDescriptor[]
+  credentials: ConfigFieldDescriptor[]
+}
+
+export interface PluginManifestInfo {
+  manifest: PublicManifest
+  descriptor: ConfigDescriptor
+}
+
+export interface PluginInstanceView {
+  id: string
+  projectId: string
+  pluginId: string
+  kind: PluginKind
+  name: string
+  enabled: boolean
+  config: Record<string, unknown>
+  credentials: Record<string, 'set' | 'unset'>
+  createdAt: string
+  ingestUrl?: string
+}
+
+export interface CreateInstanceBody {
+  pluginId: string
+  name: string
+  config: Record<string, unknown>
+  credentials: Record<string, unknown>
+}
+
+export interface UpdateInstanceBody {
+  name?: string
+  config?: Record<string, unknown>
+  credentials?: Record<string, unknown>
+  enabled?: boolean
+}
+
 export class ApiError extends Error {
   readonly status: number
 
@@ -156,4 +221,31 @@ export function submitVerdict(diagnosisId: string, verdict: Verdict, note?: stri
     method: 'POST',
     body: JSON.stringify({ verdict, note }),
   })
+}
+
+export function listPlugins(): Promise<PluginManifestInfo[]> {
+  return apiFetch('/api/plugins')
+}
+
+export function listInstances(projectId: string): Promise<PluginInstanceView[]> {
+  return apiFetch(`/api/projects/${projectId}/instances`)
+}
+
+export function createInstance(projectId: string, body: CreateInstanceBody): Promise<PluginInstanceView> {
+  return apiFetch(`/api/projects/${projectId}/instances`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+}
+
+export function updateInstance(id: string, body: UpdateInstanceBody): Promise<PluginInstanceView> {
+  return apiFetch(`/api/instances/${id}`, { method: 'PATCH', body: JSON.stringify(body) })
+}
+
+export function deleteInstance(id: string): Promise<void> {
+  return apiFetch(`/api/instances/${id}`, { method: 'DELETE' })
+}
+
+export function checkInstanceHealth(id: string): Promise<{ ok: boolean; message?: string }> {
+  return apiFetch(`/api/instances/${id}/health`, { method: 'POST' })
 }
