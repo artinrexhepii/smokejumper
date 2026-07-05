@@ -18,6 +18,7 @@ import { createIncidentManager } from './incident-manager.ts'
 import { investigateOnOpen, type InvestigatorLike } from './investigate-on-open.ts'
 import { registerDataRoutes } from './routes.ts'
 import { registerIngestRoutes } from './routes/ingest.ts'
+import { registerInstanceRoutes } from './routes/instances.ts'
 import { registerPluginCatalogRoute } from './routes/plugins.ts'
 import { registerSseRoute } from './sse.ts'
 
@@ -107,6 +108,11 @@ export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
 
   if (deps.registry) {
     registerPluginCatalogRoute(app, { registry: deps.registry })
+    registerInstanceRoutes(app, {
+      db: deps.db,
+      encryptionKey: deps.encryptionKey,
+      registry: deps.registry,
+    })
     const incidentManager = createIncidentManager({ db: deps.db, bus: deps.bus })
     await registerIngestRoutes(app, {
       db: deps.db,
