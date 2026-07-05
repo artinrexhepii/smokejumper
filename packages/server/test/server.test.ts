@@ -64,6 +64,27 @@ describe('buildServer', () => {
     expect(res.headers['access-control-allow-credentials']).toBe('true')
   })
 
+  it('allows patch and delete in the cors preflight for instance mutations', async () => {
+    const { app } = await setup()
+    for (const method of ['PATCH', 'DELETE']) {
+      const res = await app.inject({
+        method: 'OPTIONS',
+        url: '/api/instances/inst-1',
+        headers: {
+          origin: 'http://localhost:3000',
+          'access-control-request-method': method,
+          'access-control-request-headers': 'content-type',
+        },
+      })
+      expect(res.statusCode).toBe(204)
+      expect(res.headers['access-control-allow-origin']).toBe('http://localhost:3000')
+      expect(res.headers['access-control-allow-methods']).toContain(method)
+      expect(String(res.headers['access-control-allow-headers']).toLowerCase()).toContain(
+        'content-type',
+      )
+    }
+  })
+
   it('rejects api requests without a session', async () => {
     const { app } = await setup()
     const res = await app.inject({ method: 'GET', url: '/api/me' })

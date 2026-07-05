@@ -50,6 +50,7 @@ export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
   await app.register(cors, {
     origin: process.env.DASHBOARD_ORIGIN ?? 'http://localhost:3000',
     credentials: true,
+    methods: ['GET', 'HEAD', 'POST', 'PATCH', 'DELETE'],
   })
 
   app.decorateRequest('auth', null)
