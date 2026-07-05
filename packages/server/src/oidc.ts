@@ -117,6 +117,7 @@ export async function createOidcProvider(cfg: OidcConfig): Promise<OidcProvider>
       const claims = tokens.claims()
       const email = typeof claims?.email === 'string' ? claims.email : undefined
       if (!email) throw new Error('id_token is missing a required email claim')
+      if (claims?.email_verified === false) throw new Error('id_token email is not verified')
       const name = typeof claims?.name === 'string' && claims.name.length > 0 ? claims.name : email
       return { email, name }
     },

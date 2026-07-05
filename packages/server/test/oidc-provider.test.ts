@@ -103,6 +103,35 @@ describe('OidcProvider against the mock IdP', () => {
     expect(user).toEqual({ email: 'redirect@example.com', name: 'Redirect Example' })
   })
 
+  it('rejects an id_token with email_verified explicitly false', async () => {
+    idp = await startMockIdp(CLIENT_ID)
+    idp.setUser({ sub: 'user-5', email: 'spoof@example.com', name: 'Spoof', email_verified: false })
+    const provider = await providerFor(idp)
+    const start = await provider.start()
+    const callbackUrl = await driveAuthorize(start)
+    await expect(
+      provider.callback(callbackUrl, {
+        state: start.state,
+        codeVerifier: start.codeVerifier,
+        nonce: start.nonce,
+      }),
+    ).rejects.toThrow(/verified/)
+  })
+
+  it('accepts an id_token with email_verified explicitly true', async () => {
+    idp = await startMockIdp(CLIENT_ID)
+    idp.setUser({ sub: 'user-7', email: 'verified@example.com', name: 'Verified', email_verified: true })
+    const provider = await providerFor(idp)
+    const start = await provider.start()
+    const callbackUrl = await driveAuthorize(start)
+    const user = await provider.callback(callbackUrl, {
+      state: start.state,
+      codeVerifier: start.codeVerifier,
+      nonce: start.nonce,
+    })
+    expect(user).toEqual({ email: 'verified@example.com', name: 'Verified' })
+  })
+
   it('rejects a state mismatch', async () => {
     idp = await startMockIdp(CLIENT_ID)
     idp.setUser({ sub: 'user-4', email: 'x@example.com' })

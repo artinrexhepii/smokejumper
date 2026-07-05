@@ -7,6 +7,7 @@ export interface MockIdpUser {
   sub: string
   email?: string
   name?: string
+  email_verified?: boolean
 }
 
 export interface MockIdp {
@@ -93,6 +94,7 @@ export async function startMockIdp(clientId: string): Promise<MockIdp> {
       const payload: Record<string, unknown> = { sub: user.sub }
       if (user.email !== undefined) payload.email = user.email
       if (user.name !== undefined) payload.name = user.name
+      if (user.email_verified !== undefined) payload.email_verified = user.email_verified
       if (stored.nonce) payload.nonce = stored.nonce
       const idToken = await new SignJWT(payload)
         .setProtectedHeader({ alg: 'RS256', kid: 'test-key' })
