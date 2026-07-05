@@ -40,7 +40,7 @@ export async function startMockIdp(clientId: string): Promise<MockIdp> {
     use: 'sig',
   }
 
-  const codeNonces = new Map<string, string | null>()
+  const codeNonces = new Map<string, { nonce: string | null; redirectUri: string }>()
   let user: MockIdpUser = { sub: 'user-1', email: 'alice@example.com', name: 'Alice Example' }
   let issuer = ''
 
@@ -71,7 +71,7 @@ export async function startMockIdp(clientId: string): Promise<MockIdp> {
         return
       }
       const code = randomBytes(16).toString('hex')
-      codeNonces.set(code, url.searchParams.get('nonce'))
+      codeNonces.set(code, { nonce: url.searchParams.get('nonce'), redirectUri })
       const location = new URL(redirectUri)
       location.searchParams.set('code', code)
       const state = url.searchParams.get('state')
@@ -84,12 +84,16 @@ export async function startMockIdp(clientId: string): Promise<MockIdp> {
     if (req.method === 'POST' && url.pathname === '/token') {
       const params = new URLSearchParams(await readBody(req))
       const code = params.get('code') ?? ''
-      const nonce = codeNonces.get(code) ?? null
+      const stored = codeNonces.get(code) ?? null
       codeNonces.delete(code)
+      if (!stored || params.get('redirect_uri') !== stored.redirectUri) {
+        json(res, 400, { error: 'invalid_grant' })
+        return
+      }
       const payload: Record<string, unknown> = { sub: user.sub }
       if (user.email !== undefined) payload.email = user.email
       if (user.name !== undefined) payload.name = user.name
-      if (nonce) payload.nonce = nonce
+      if (stored.nonce) payload.nonce = stored.nonce
       const idToken = await new SignJWT(payload)
         .setProtectedHeader({ alg: 'RS256', kid: 'test-key' })
         .setIssuer(issuer)

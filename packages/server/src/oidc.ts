@@ -106,7 +106,9 @@ export async function createOidcProvider(cfg: OidcConfig): Promise<OidcProvider>
     },
 
     async callback(currentUrl, checks) {
-      const tokens = await client.authorizationCodeGrant(config, currentUrl, {
+      const exchangeUrl = new URL(cfg.redirectUri)
+      exchangeUrl.search = currentUrl.search
+      const tokens = await client.authorizationCodeGrant(config, exchangeUrl, {
         pkceCodeVerifier: checks.codeVerifier,
         expectedState: checks.state,
         expectedNonce: checks.nonce,

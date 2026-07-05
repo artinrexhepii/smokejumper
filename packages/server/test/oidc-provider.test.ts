@@ -84,6 +84,25 @@ describe('OidcProvider against the mock IdP', () => {
     ).rejects.toThrow(/email/)
   })
 
+  it('exchanges the code using the configured redirect uri, not the request origin', async () => {
+    idp = await startMockIdp(CLIENT_ID)
+    idp.setUser({ sub: 'user-6', email: 'redirect@example.com', name: 'Redirect Example' })
+    const provider = await providerFor(idp)
+
+    const start = await provider.start()
+    const callbackUrl = await driveAuthorize(start)
+    const wrongOriginUrl = new URL(
+      callbackUrl.pathname + callbackUrl.search,
+      'http://wrong-host:9999',
+    )
+    const user = await provider.callback(wrongOriginUrl, {
+      state: start.state,
+      codeVerifier: start.codeVerifier,
+      nonce: start.nonce,
+    })
+    expect(user).toEqual({ email: 'redirect@example.com', name: 'Redirect Example' })
+  })
+
   it('rejects a state mismatch', async () => {
     idp = await startMockIdp(CLIENT_ID)
     idp.setUser({ sub: 'user-4', email: 'x@example.com' })
