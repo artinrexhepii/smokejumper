@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import { ApiError, login } from '../../lib/api'
+import { ApiError, getAuthConfig, login, oidcStartUrl, type AuthConfig } from '../../lib/api'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -10,6 +10,19 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
+  const [authConfig, setAuthConfig] = useState<AuthConfig | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    getAuthConfig()
+      .then((config) => {
+        if (!cancelled) setAuthConfig(config)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault()
@@ -59,6 +72,11 @@ export default function LoginPage() {
         <button className="btn btn-accent" type="submit" disabled={pending}>
           {pending ? 'Signing in…' : 'Sign in'}
         </button>
+        {authConfig?.oidc.enabled ? (
+          <a className="btn" href={oidcStartUrl}>
+            {authConfig.oidc.buttonLabel}
+          </a>
+        ) : null}
         <p className="hint">seeded dev login: admin@example.com / smokejumper</p>
       </form>
     </div>

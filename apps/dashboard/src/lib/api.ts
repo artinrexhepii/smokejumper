@@ -249,3 +249,14 @@ export function deleteInstance(id: string): Promise<void> {
 export function checkInstanceHealth(id: string): Promise<{ ok: boolean; message?: string }> {
   return apiFetch(`/api/instances/${id}/health`, { method: 'POST' })
 }
+
+export interface AuthConfig {
+  password: boolean
+  oidc: { enabled: boolean; buttonLabel: string }
+}
+
+export const oidcStartUrl = `${API_URL}/api/auth/oidc/start`
+
+export function getAuthConfig(): Promise<AuthConfig> {
+  return apiFetch('/api/auth/config')
+}
