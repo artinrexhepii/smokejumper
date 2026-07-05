@@ -11,7 +11,12 @@ import {
   type Db,
   type PluginInstance,
 } from '@smokejumper/db'
-import { PluginConfigError, validateInstanceInput, type PluginRegistry } from '@smokejumper/plugin-host'
+import {
+  PluginConfigError,
+  runInstanceHealthCheck,
+  validateInstanceInput,
+  type PluginRegistry,
+} from '@smokejumper/plugin-host'
 import { describeConfig, type PluginKind, type PluginManifest } from '@smokejumper/plugin-sdk'
 import type { FastifyInstance, FastifyRequest } from 'fastify'
 import { z } from 'zod'
@@ -239,5 +244,22 @@ export function registerInstanceRoutes(app: FastifyInstance, deps: PluginRoutesD
       detail: { pluginId: instance.pluginId },
     })
     return reply.code(204).send()
+  })
+
+  app.post('/api/instances/:id/health', async (request, reply) => {
+    const { id } = request.params as { id: string }
+    const instance = await getPluginInstance(deps.db, id)
+    if (!instance) return reply.code(404).send({ error: 'not found' })
+    const project = await getProject(deps.db, instance.projectId)
+    if (!project || !(await ownerOrAdmin(request, project.orgId))) {
+      return reply.code(403).send({ error: 'forbidden' })
+    }
+    const health = await runInstanceHealthCheck({
+      db: deps.db,
+      encryptionKey: deps.encryptionKey,
+      registry: deps.registry,
+      instanceId: id,
+    })
+    return { ok: health.ok, ...(health.message !== undefined ? { message: health.message } : {}) }
   })
 }
