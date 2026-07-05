@@ -33,4 +33,14 @@ describe('pluginManifestSchema', () => {
   it('rejects a configSchema that is not a zod schema', () => {
     expect(pluginManifestSchema.safeParse({ ...valid, configSchema: { type: 'object' } }).success).toBe(false)
   })
+
+  it('accepts an optional credentialSchema that is a zod schema', () => {
+    expect(
+      pluginManifestSchema.safeParse({ ...valid, credentialSchema: z.object({ token: z.string() }) }).success,
+    ).toBe(true)
+  })
+
+  it('rejects a credentialSchema that is not a zod schema', () => {
+    expect(pluginManifestSchema.safeParse({ ...valid, credentialSchema: { type: 'object' } }).success).toBe(false)
+  })
 })

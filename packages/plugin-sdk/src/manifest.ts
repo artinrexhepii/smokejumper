@@ -22,6 +22,11 @@ export const pluginManifestSchema = z.object({
   configSchema: z.custom<z.ZodTypeAny>((v) => v instanceof z.ZodType, {
     message: 'configSchema must be a zod schema',
   }),
+  credentialSchema: z
+    .custom<z.ZodTypeAny>((v) => v instanceof z.ZodType, {
+      message: 'credentialSchema must be a zod schema',
+    })
+    .optional(),
 })
 
 export type PluginManifest = z.infer<typeof pluginManifestSchema>
