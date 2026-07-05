@@ -20,6 +20,7 @@
     "@smokejumper/plugin-host": "workspace:*",
     "@smokejumper/plugin-sdk": "workspace:*",
     "fastify": "^5.9.0",
+    "openid-client": "^6.8.4",
     "zod": "^3.25.0"
   },
   "devDependencies": {
