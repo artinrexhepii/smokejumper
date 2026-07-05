@@ -133,3 +133,14 @@ export async function getProjectBySlug(db: Db, orgId: string, slug: string): Pro
 export async function listProjects(db: Db, orgId: string): Promise<Project[]> {
   return db.select().from(projects).where(eq(projects.orgId, orgId))
 }
+
+export async function getMemberRole(
+  db: Db,
+  input: { orgId: string; userId: string },
+): Promise<OrgRole | null> {
+  const [row] = await db
+    .select({ role: orgMemberships.role })
+    .from(orgMemberships)
+    .where(and(eq(orgMemberships.orgId, input.orgId), eq(orgMemberships.userId, input.userId)))
+  return row?.role ?? null
+}

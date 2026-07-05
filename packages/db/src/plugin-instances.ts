@@ -65,3 +65,45 @@ export function getDecryptedConfig(
     : {}
   return { ...instance.config, ...credentials }
 }
+
+export async function updatePluginInstance(
+  db: Db,
+  id: string,
+  input: {
+    name?: string
+    config?: Record<string, unknown>
+    credentials?: Record<string, unknown>
+    enabled?: boolean
+    encryptionKey: string
+  },
+): Promise<PluginInstance> {
+  const updates: Partial<{
+    name: string
+    config: Record<string, unknown>
+    credentialsEncrypted: string | null
+    enabled: boolean
+  }> = {}
+  if (input.name !== undefined) updates.name = input.name
+  if (input.config !== undefined) updates.config = input.config
+  if (input.enabled !== undefined) updates.enabled = input.enabled
+  if (input.credentials !== undefined) {
+    updates.credentialsEncrypted =
+      Object.keys(input.credentials).length > 0
+        ? encryptJson(input.credentials, input.encryptionKey)
+        : null
+  }
+  if (Object.keys(updates).length === 0) {
+    const existing = await getPluginInstance(db, id)
+    return existing!
+  }
+  const [instance] = await db
+    .update(pluginInstances)
+    .set(updates)
+    .where(eq(pluginInstances.id, id))
+    .returning()
+  return instance!
+}
+
+export async function deletePluginInstance(db: Db, id: string): Promise<void> {
+  await db.delete(pluginInstances).where(eq(pluginInstances.id, id))
+}
