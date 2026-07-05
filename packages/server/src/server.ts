@@ -3,6 +3,7 @@ import cors from '@fastify/cors'
 import {
   createSession,
   deleteSession,
+  getMemberRole,
   getSession,
   listOrganizationsForUser,
   verifyCredentials,
@@ -17,6 +18,7 @@ import { createIncidentManager } from './incident-manager.ts'
 import { investigateOnOpen, type InvestigatorLike } from './investigate-on-open.ts'
 import { registerDataRoutes } from './routes.ts'
 import { registerIngestRoutes } from './routes/ingest.ts'
+import { registerPluginCatalogRoute } from './routes/plugins.ts'
 import { registerSseRoute } from './sse.ts'
 
 export interface ServerDeps {
@@ -91,13 +93,20 @@ export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
   app.get('/api/me', async (request) => {
     const auth = request.auth!
     const orgs = await listOrganizationsForUser(deps.db, auth.user.id)
-    return { user: toPublicUser(auth.user), orgs }
+    const orgsWithRole = await Promise.all(
+      orgs.map(async (org) => ({
+        ...org,
+        role: (await getMemberRole(deps.db, { orgId: org.id, userId: auth.user.id })) ?? 'member',
+      })),
+    )
+    return { user: toPublicUser(auth.user), orgs: orgsWithRole }
   })
 
   registerDataRoutes(app, deps)
   registerSseRoute(app, deps)
 
   if (deps.registry) {
+    registerPluginCatalogRoute(app, { registry: deps.registry })
     const incidentManager = createIncidentManager({ db: deps.db, bus: deps.bus })
     await registerIngestRoutes(app, {
       db: deps.db,
