@@ -530,3 +530,13 @@ details > summary {
   display: flex;
   gap: 0.4rem;
 }
+
+.settings-actions {
+  margin-bottom: 1rem;
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+}
