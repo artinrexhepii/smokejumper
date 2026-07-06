@@ -208,6 +208,16 @@ importers:
         specifier: ^4.23.0
         version: 4.23.0
 
+  plugins/alertmanager:
+    dependencies:
+      '@smokejumper/plugin-sdk':
+        specifier: workspace:*
+        version: link:../../packages/plugin-sdk
+    devDependencies:
+      zod:
+        specifier: ^3.25.0
+        version: 3.25.76
+
   plugins/cloudwatch:
     dependencies:
       '@aws-sdk/client-cloudwatch':
