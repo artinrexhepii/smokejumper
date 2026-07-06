@@ -10,12 +10,17 @@ const tool = (name: string) => source.tools().find((t) => t.name === name)!
 interface CapturedRequest {
   url: URL
   headers: Record<string, string>
+  body?: unknown
 }
 
 function fakeDatadogFetch(handlers: Record<string, { status?: number; body: unknown }>, captured: CapturedRequest[] = []): typeof fetch {
   return (async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = new URL(String(input))
-    captured.push({ url, headers: (init?.headers as Record<string, string>) ?? {} })
+    captured.push({
+      url,
+      headers: (init?.headers as Record<string, string>) ?? {},
+      body: init?.body ? (JSON.parse(String(init.body)) as unknown) : undefined,
+    })
     const handler = handlers[url.pathname]
     if (!handler) return new Response('not found', { status: 404 })
     return new Response(JSON.stringify(handler.body), { status: handler.status ?? 200 })
@@ -100,5 +105,88 @@ describe('datadog telemetry source', () => {
     const fetchImpl = fakeDatadogFetch({ '/api/v1/validate': { status: 403, body: { errors: ['Forbidden'] } } })
     const health = await source.healthCheck({ ...createTestContext<DatadogConfig>(baseConfig), fetch: fetchImpl })
     expect(health.ok).toBe(false)
+  })
+
+  it('searches logs with the default window and limit', async () => {
+    const captured: CapturedRequest[] = []
+    const fetchImpl = fakeDatadogFetch(
+      {
+        '/api/v2/logs/events/search': {
+          body: {
+            data: [
+              {
+                id: 'AwAAAX-1',
+                attributes: {
+                  timestamp: '2026-07-06T09:00:00.000Z',
+                  message: 'request failed with 500',
+                  service: 'shop-api',
+                  status: 'error',
+                  tags: ['env:prod', 'service:shop-api'],
+                },
+              },
+            ],
+          },
+        },
+      },
+      captured,
+    )
+    const t = tool('search_logs')
+    const result = await t.execute(t.inputSchema.parse({ query: 'service:shop-api status:error' }), contextWith(fetchImpl))
+    expect(result.summary).toBe('1 log events for "service:shop-api status:error" over 60m')
+    const events = result.data as Array<{ message: string; service: string; status: string }>
+    expect(events[0]!.message).toBe('request failed with 500')
+    expect(events[0]!.service).toBe('shop-api')
+    expect(captured[0]!.url.pathname).toBe('/api/v2/logs/events/search')
+    expect(captured[0]!.body).toEqual({
+      filter: { query: 'service:shop-api status:error', from: 'now-60m', to: 'now' },
+      sort: '-timestamp',
+      page: { limit: 100 },
+    })
+  })
+
+  it('applies a custom minutesAgo and limit to the log search', async () => {
+    const captured: CapturedRequest[] = []
+    const fetchImpl = fakeDatadogFetch({ '/api/v2/logs/events/search': { body: { data: [] } } }, captured)
+    const t = tool('search_logs')
+    await t.execute(t.inputSchema.parse({ query: 'service:worker', minutesAgo: 15, limit: 25 }), contextWith(fetchImpl))
+    expect(captured[0]!.body).toEqual({
+      filter: { query: 'service:worker', from: 'now-15m', to: 'now' },
+      sort: '-timestamp',
+      page: { limit: 25 },
+    })
+  })
+
+  it('defaults missing service, status, and tags on log events', async () => {
+    const fetchImpl = fakeDatadogFetch({
+      '/api/v2/logs/events/search': {
+        body: { data: [{ id: 'AwAAAX-2', attributes: { timestamp: '2026-07-06T09:05:00.000Z', message: 'no metadata' } }] },
+      },
+    })
+    const t = tool('search_logs')
+    const result = await t.execute(t.inputSchema.parse({ query: '*' }), contextWith(fetchImpl))
+    const events = result.data as Array<{ service: string; status: string; tags: string[] }>
+    expect(events[0]).toMatchObject({ service: 'unknown', status: 'info', tags: [] })
+  })
+
+  it('lists monitors with no filters', async () => {
+    const fetchImpl = fakeDatadogFetch({
+      '/api/v1/monitor': {
+        body: [{ id: 1, name: 'shop-api error rate', query: 'avg(last_5m):...', overall_state: 'OK', tags: ['service:shop-api'] }],
+      },
+    })
+    const t = tool('list_monitors')
+    const result = await t.execute(t.inputSchema.parse({}), contextWith(fetchImpl))
+    expect(result.summary).toBe('1 monitors')
+    const monitors = result.data as Array<{ overallState: string }>
+    expect(monitors[0]!.overallState).toBe('OK')
+  })
+
+  it('filters monitors by group state and tags', async () => {
+    const captured: CapturedRequest[] = []
+    const fetchImpl = fakeDatadogFetch({ '/api/v1/monitor': { body: [] } }, captured)
+    const t = tool('list_monitors')
+    await t.execute(t.inputSchema.parse({ groupStates: 'alert', tags: 'service:shop-api' }), contextWith(fetchImpl))
+    expect(captured[0]!.url.searchParams.get('group_states')).toBe('alert')
+    expect(captured[0]!.url.searchParams.get('monitor_tags')).toBe('service:shop-api')
   })
 })

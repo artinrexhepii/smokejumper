@@ -24,6 +24,29 @@ interface DatadogQueryResponse {
   series: DatadogMetricSeries[]
 }
 
+interface DatadogLogEvent {
+  id: string
+  attributes: {
+    timestamp: string
+    message: string
+    service?: string
+    status?: string
+    tags?: string[]
+  }
+}
+
+interface DatadogLogsSearchResponse {
+  data: DatadogLogEvent[]
+}
+
+interface DatadogMonitor {
+  id: number
+  name: string
+  query: string
+  overall_state: string
+  tags: string[]
+}
+
 function apiBase(site: string): string {
   return `https://api.${site}`
 }
@@ -36,6 +59,18 @@ async function datadogGet<T>(ctx: SourceContext<DatadogConfig>, path: string, pa
   const url = new URL(path, apiBase(ctx.config.site))
   if (params) for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value)
   const res = await ctx.fetch(url, { signal: ctx.signal, headers: authHeaders(ctx.config) })
+  if (!res.ok) throw new Error(`datadog returned ${res.status} for ${path}`)
+  return (await res.json()) as T
+}
+
+async function datadogPost<T>(ctx: SourceContext<DatadogConfig>, path: string, body: unknown): Promise<T> {
+  const url = new URL(path, apiBase(ctx.config.site))
+  const res = await ctx.fetch(url, {
+    method: 'POST',
+    signal: ctx.signal,
+    headers: { ...authHeaders(ctx.config), 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  })
   if (!res.ok) throw new Error(`datadog returned ${res.status} for ${path}`)
   return (await res.json()) as T
 }
@@ -62,6 +97,61 @@ const tools: ToolSpec<DatadogConfig>[] = [
       })
       if (data.status !== 'ok') throw new Error(data.error ?? `datadog query "${query}" failed`)
       return { summary: `${query}: ${data.series.length} series over ${minutesAgo}m`, data: data.series }
+    },
+  },
+  {
+    name: 'search_logs',
+    description: 'Search Datadog logs over a recent time window',
+    inputSchema: z.object({
+      query: z.string().min(1),
+      minutesAgo: z.number().int().positive().default(60),
+      limit: z.number().int().positive().max(1000).default(100),
+    }),
+    scope: 'read',
+    costHint: 'moderate',
+    latencyHintMs: 1500,
+    async execute(input, ctx) {
+      const { query, minutesAgo, limit } = input as { query: string; minutesAgo: number; limit: number }
+      const data = await datadogPost<DatadogLogsSearchResponse>(ctx, '/api/v2/logs/events/search', {
+        filter: { query, from: `now-${minutesAgo}m`, to: 'now' },
+        sort: '-timestamp',
+        page: { limit },
+      })
+      const events = data.data.map((event) => ({
+        id: event.id,
+        timestamp: event.attributes.timestamp,
+        message: event.attributes.message,
+        service: event.attributes.service ?? 'unknown',
+        status: event.attributes.status ?? 'info',
+        tags: event.attributes.tags ?? [],
+      }))
+      return { summary: `${events.length} log events for "${query}" over ${minutesAgo}m`, data: events }
+    },
+  },
+  {
+    name: 'list_monitors',
+    description: 'List Datadog monitors and their current state',
+    inputSchema: z.object({
+      groupStates: z.enum(['alert', 'warn', 'no data', 'ok']).optional(),
+      tags: z.string().optional(),
+    }),
+    scope: 'read',
+    costHint: 'cheap',
+    latencyHintMs: 500,
+    async execute(input, ctx) {
+      const { groupStates, tags } = input as { groupStates?: 'alert' | 'warn' | 'no data' | 'ok'; tags?: string }
+      const params: Record<string, string> = {}
+      if (groupStates) params.group_states = groupStates
+      if (tags) params.monitor_tags = tags
+      const data = await datadogGet<DatadogMonitor[]>(ctx, '/api/v1/monitor', params)
+      const monitors = data.map((monitor) => ({
+        id: monitor.id,
+        name: monitor.name,
+        query: monitor.query,
+        overallState: monitor.overall_state,
+        tags: monitor.tags,
+      }))
+      return { summary: `${monitors.length} monitors`, data: monitors }
     },
   },
 ]
