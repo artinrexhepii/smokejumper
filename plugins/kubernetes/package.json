@@ -1,0 +1,20 @@
+{
+  "name": "@smokejumper/plugin-kubernetes",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@kubernetes/client-node": "^1.4.0",
+    "@smokejumper/plugin-sdk": "workspace:*"
+  },
+  "peerDependencies": {
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "zod": "^3.25.0"
+  }
+}
