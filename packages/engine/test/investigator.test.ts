@@ -14,6 +14,7 @@ import { z } from 'zod'
 import { BudgetExceededError } from '../src/budget'
 import type { ModelDriver } from '../src/driver'
 import { createInvestigator, type IncidentBus } from '../src/investigator'
+import { embedRunbook } from '../src/runbooks'
 
 const encryptionKey = Buffer.alloc(32, 7).toString('base64')
 
@@ -239,5 +240,33 @@ describe('investigate (fake driver)', () => {
       models: { triage: 'claude-haiku-4-5-20251001', investigator: 'claude-sonnet-5', synthesis: 'claude-sonnet-5' },
     })
     expect(investigator.investigate).toBeTypeOf('function')
+  })
+
+  it('injects a search_runbooks tool and records its call as evidence when an embedder is configured', async () => {
+    const db = await createTestDb()
+    const { project, incident } = await seedIncident(db)
+    const { bus } = collectingBus()
+    const runbookEmbedder = async () => new Array<number>(1536).fill(0.4)
+    await embedRunbook({
+      db,
+      embedder: runbookEmbedder,
+      runbookId: 'rb-1',
+      projectId: project.id,
+      title: 'On-call runbook',
+      content: 'Restart the affected service and check its health endpoint.',
+    })
+    await makeInvestigator(db, bus, [], { embedder: runbookEmbedder }).investigate(incident.id)
+    const detail = await getIncidentDetail(db, incident.id)
+    const runbookEvidence = detail!.evidence.filter((record) => record.toolName === 'search_runbooks')
+    expect(runbookEvidence.length).toBeGreaterThan(0)
+  })
+
+  it('injects no search_runbooks tool when no embedder is configured', async () => {
+    const db = await createTestDb()
+    const { incident } = await seedIncident(db)
+    const { bus } = collectingBus()
+    await makeInvestigator(db, bus, []).investigate(incident.id)
+    const detail = await getIncidentDetail(db, incident.id)
+    expect(detail!.evidence.filter((record) => record.toolName === 'search_runbooks')).toHaveLength(0)
   })
 })

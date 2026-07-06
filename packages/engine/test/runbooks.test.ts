@@ -1,6 +1,6 @@
 import { createOrganization, createProject, createTestDb, searchMemory, type Db } from '@smokejumper/db'
 import { describe, expect, it } from 'vitest'
-import { chunkRunbook, embedRunbook } from '../src/runbooks'
+import { buildRunbookTool, chunkRunbook, embedRunbook } from '../src/runbooks'
 
 describe('chunkRunbook', () => {
   it('returns an empty array for empty or whitespace-only content', () => {
@@ -101,5 +101,44 @@ describe('embedRunbook', () => {
     const entries = await searchMemory(db, { projectId, embedding: await embedder(), limit: 20 })
     expect(entries).toHaveLength(1)
     expect(entries[0]!.content).toBe('short content')
+  })
+})
+
+describe('buildRunbookTool', () => {
+  it('returns undefined when no embedder is configured', () => {
+    expect(buildRunbookTool({ db: {} as Db, projectId: 'p' })).toBeUndefined()
+  })
+
+  it('embeds the query, searches runbook chunks, and reports them in the tool result', async () => {
+    const { db, projectId } = await setup()
+    await embedRunbook({
+      db,
+      embedder,
+      runbookId: 'rb-1',
+      projectId,
+      title: 'Restart guide',
+      content: 'Restart the api pods when memory climbs past 90%.',
+    })
+    const tool = buildRunbookTool({ db, embedder, projectId })!
+    expect(tool.name).toBe('search_runbooks')
+    const result = await tool.run(
+      { query: 'high memory usage' },
+      { incidentId: 'inc-1', signal: new AbortController().signal },
+    )
+    expect(result.summary).toContain('Found')
+    const data = result.data as Array<{ title: string }>
+    expect(data.length).toBeGreaterThan(0)
+    expect(data[0]!.title).toBe('Restart guide')
+  })
+
+  it('reports no matches without throwing when no runbooks are seeded', async () => {
+    const { db, projectId } = await setup()
+    const tool = buildRunbookTool({ db, embedder, projectId })!
+    const result = await tool.run(
+      { query: 'anything' },
+      { incidentId: 'inc-1', signal: new AbortController().signal },
+    )
+    expect(result.summary).toContain('No runbook passages matched')
+    expect(result.data).toEqual([])
   })
 })

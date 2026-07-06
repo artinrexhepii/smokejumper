@@ -89,6 +89,7 @@ export interface SynthesisInput {
   findings: Array<{ specialist: string; summary: string; evidenceIds: string[] }>
   evidence: Array<{ id: string; toolName: string; summary: string }>
   pastIncidents: Array<{ content: string; similarity: number }>
+  runbooks?: Array<{ content: string; similarity: number; title: string }>
 }
 
 export interface DriverCallOptions {

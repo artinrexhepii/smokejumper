@@ -6,6 +6,7 @@ import {
   createInvestigation,
   getIncidentDetail,
   listEvidence,
+  searchRunbookChunks,
   updateIncidentStatus,
   type Db,
 } from '@smokejumper/db'
@@ -20,6 +21,7 @@ import { createFakeDriver } from './fake-driver'
 import { recallSimilarIncidents, storeIncidentMemory, type Embedder } from './memory'
 import { validatePlan } from './plan-validation'
 import { bindTools } from './recorder'
+import { buildRunbookTool } from './runbooks'
 
 export interface IncidentBus {
   publish(event: IncidentEvent): void
@@ -78,7 +80,9 @@ export function createInvestigator(opts: CreateInvestigatorOptions): Investigato
         )
         publish('investigation.milestone', { phase: 'triage', summary: triage.brief, severity: triage.severity })
 
-        const hostTools = await getTools(projectId)
+        const baseTools = await getTools(projectId)
+        const runbookTool = buildRunbookTool({ db: opts.db, embedder: opts.embedder, projectId })
+        const hostTools = runbookTool ? [...baseTools, runbookTool] : baseTools
         const inventory = hostTools.map((tool) => ({
           name: tool.name,
           description: tool.description,
@@ -154,12 +158,27 @@ export function createInvestigator(opts: CreateInvestigatorOptions): Investigato
           embedder: opts.embedder,
           query: triage.brief,
         })
+        let runbooks: Array<{ content: string; similarity: number; title: string }> = []
+        if (opts.embedder) {
+          const briefEmbedding = await opts.embedder(triage.brief)
+          const runbookChunks = await searchRunbookChunks(opts.db, {
+            projectId,
+            embedding: briefEmbedding,
+            limit: 3,
+          })
+          runbooks = runbookChunks.map((chunk) => ({
+            content: chunk.content,
+            similarity: chunk.similarity,
+            title: chunk.title,
+          }))
+        }
         const evidence = await listEvidence(opts.db, investigation.id)
         const synthesis = await driver.synthesize({
           brief: triage.brief,
           findings,
           evidence: evidence.map((record) => ({ id: record.id, toolName: record.toolName, summary: record.summary })),
           pastIncidents,
+          runbooks,
         })
         const evidenceChain = filterEvidenceChain(
           synthesis.evidenceChain,

@@ -1,4 +1,6 @@
-import { addMemoryEntry, deleteRunbookChunks, type Db } from '@smokejumper/db'
+import { addMemoryEntry, deleteRunbookChunks, searchRunbookChunks, type Db } from '@smokejumper/db'
+import type { HostTool } from '@smokejumper/plugin-host'
+import { z } from 'zod'
 import type { Embedder } from './memory'
 
 const CHUNK_TARGET_SIZE = 800
@@ -72,4 +74,32 @@ export function chunkRunbook(content: string): string[] {
   }
   if (current !== '') chunks.push(current)
   return chunks
+}
+
+const searchRunbooksInputSchema = z.object({ query: z.string().min(1) })
+
+export function buildRunbookTool(opts: { db: Db; embedder?: Embedder; projectId: string }): HostTool | undefined {
+  if (!opts.embedder) return undefined
+  const embedder = opts.embedder
+  return {
+    instanceId: 'runbooks',
+    pluginId: 'runbooks',
+    name: 'search_runbooks',
+    description: "Searches the project's runbooks for passages relevant to a query",
+    inputSchema: searchRunbooksInputSchema,
+    costHint: 'cheap',
+    latencyHintMs: 150,
+    async run(input, _runOpts) {
+      const { query } = searchRunbooksInputSchema.parse(input)
+      const embedding = await embedder(query)
+      const chunks = await searchRunbookChunks(opts.db, { projectId: opts.projectId, embedding, limit: 5 })
+      return {
+        summary:
+          chunks.length > 0
+            ? `Found ${chunks.length} runbook passage(s) matching "${query}"`
+            : `No runbook passages matched "${query}"`,
+        data: chunks,
+      }
+    },
+  }
 }
