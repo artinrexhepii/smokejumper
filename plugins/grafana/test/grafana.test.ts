@@ -51,6 +51,65 @@ describe('grafana telemetry source', () => {
     expect(captured[0]!.headers.authorization).toBe('Bearer glsa_test_token')
   })
 
+  it('queries a datasource through the proxy over the default window', async () => {
+    const captured: CapturedRequest[] = []
+    const fetchImpl = fakeGrafanaFetch(
+      {
+        '/api/datasources/proxy/1/api/v1/query_range': {
+          status: 'success',
+          data: { resultType: 'matrix', result: [{ metric: {}, values: [] }] },
+        },
+      },
+      captured,
+    )
+    const t = tool('query_datasource')
+    const result = await t.execute(
+      t.inputSchema.parse({ datasourceId: 1, query: 'rate(http_requests_total[5m])' }),
+      contextWith(fetchImpl),
+    )
+    expect(result.summary).toBe('rate(http_requests_total[5m]): 1 series over 60m via datasource 1')
+    expect(captured[0]!.url.pathname).toBe('/api/datasources/proxy/1/api/v1/query_range')
+    expect(captured[0]!.url.searchParams.get('step')).toBe('60')
+    const start = Number(captured[0]!.url.searchParams.get('start'))
+    const end = Number(captured[0]!.url.searchParams.get('end'))
+    expect(end - start).toBe(60 * 60)
+  })
+
+  it('throws when the proxied datasource returns an error status', async () => {
+    const fetchImpl = fakeGrafanaFetch({
+      '/api/datasources/proxy/1/api/v1/query_range': {
+        status: 'error',
+        data: { resultType: 'matrix', result: [] },
+        error: 'bad query',
+      },
+    })
+    const t = tool('query_datasource')
+    await expect(
+      t.execute(t.inputSchema.parse({ datasourceId: 1, query: '???' }), contextWith(fetchImpl)),
+    ).rejects.toThrow(/bad query/)
+  })
+
+  it('searches annotations within the default window', async () => {
+    const captured: CapturedRequest[] = []
+    const fetchImpl = fakeGrafanaFetch(
+      { '/api/annotations': [{ id: 1, time: 1751700000000, text: 'deploy v42', tags: ['deploy'] }] },
+      captured,
+    )
+    const t = tool('search_annotations')
+    const result = await t.execute(t.inputSchema.parse({}), contextWith(fetchImpl))
+    expect(result.summary).toBe('1 annotations over 60m')
+    expect(captured[0]!.url.searchParams.has('from')).toBe(true)
+    expect(captured[0]!.url.searchParams.has('to')).toBe(true)
+  })
+
+  it('appends repeated tags query params to the annotations search', async () => {
+    const captured: CapturedRequest[] = []
+    const fetchImpl = fakeGrafanaFetch({ '/api/annotations': [] }, captured)
+    const t = tool('search_annotations')
+    await t.execute(t.inputSchema.parse({ tags: ['deploy', 'incident'] }), contextWith(fetchImpl))
+    expect(captured[0]!.url.searchParams.getAll('tags')).toEqual(['deploy', 'incident'])
+  })
+
   it('reports healthy when the grafana database is ok', async () => {
     const fetchImpl = fakeGrafanaFetch({})
     const health = await source.healthCheck({ ...createTestContext<GrafanaConfig>(baseConfig), fetch: fetchImpl })

@@ -20,6 +20,24 @@ export interface GrafanaDatasource {
   isDefault: boolean
 }
 
+export interface GrafanaAnnotation {
+  id: number
+  alertId?: number
+  dashboardId?: number
+  panelId?: number
+  userId?: number
+  time: number
+  timeEnd?: number
+  text: string
+  tags: string[]
+}
+
+interface GrafanaProxyQueryResponse {
+  status: 'success' | 'error'
+  data: { resultType: string; result: unknown[] }
+  error?: string
+}
+
 function authHeaders(config: GrafanaConfig): Record<string, string> {
   return { authorization: `Bearer ${config.apiToken}` }
 }
@@ -47,6 +65,65 @@ const tools: ToolSpec<GrafanaConfig>[] = [
     async execute(_input, ctx) {
       const data = await grafanaGet<GrafanaDatasource[]>(ctx, '/api/datasources')
       return { summary: `${data.length} datasources`, data }
+    },
+  },
+  {
+    name: 'query_datasource',
+    description: 'Run a range query against a Grafana datasource through its datasource-proxy endpoint',
+    inputSchema: z.object({
+      datasourceId: z.number().int().positive(),
+      query: z.string().min(1),
+      minutesAgo: z.number().int().positive().default(60),
+      stepSeconds: z.number().int().positive().default(60),
+    }),
+    scope: 'read',
+    costHint: 'moderate',
+    latencyHintMs: 1500,
+    async execute(input, ctx) {
+      const { datasourceId, query, minutesAgo, stepSeconds } = input as {
+        datasourceId: number
+        query: string
+        minutesAgo: number
+        stepSeconds: number
+      }
+      const end = Math.floor(Date.now() / 1000)
+      const start = end - minutesAgo * 60
+      const data = await grafanaGet<GrafanaProxyQueryResponse>(
+        ctx,
+        `/api/datasources/proxy/${datasourceId}/api/v1/query_range`,
+        { query, start: String(start), end: String(end), step: String(stepSeconds) },
+      )
+      if (data.status !== 'success') throw new Error(data.error ?? `datasource ${datasourceId} query failed`)
+      return {
+        summary: `${query}: ${data.data.result.length} series over ${minutesAgo}m via datasource ${datasourceId}`,
+        data: data.data,
+      }
+    },
+  },
+  {
+    name: 'search_annotations',
+    description: 'Search Grafana annotations (deploys, alerts, manual notes) within a recent time window',
+    inputSchema: z.object({
+      minutesAgo: z.number().int().positive().default(60),
+      limit: z.number().int().positive().max(1000).default(100),
+      tags: z.array(z.string()).optional(),
+    }),
+    scope: 'read',
+    costHint: 'cheap',
+    latencyHintMs: 500,
+    async execute(input, ctx) {
+      const { minutesAgo, limit, tags } = input as { minutesAgo: number; limit: number; tags?: string[] }
+      const to = Date.now()
+      const from = to - minutesAgo * 60_000
+      const url = new URL('/api/annotations', ctx.config.url)
+      url.searchParams.set('from', String(from))
+      url.searchParams.set('to', String(to))
+      url.searchParams.set('limit', String(limit))
+      if (tags) for (const tagValue of tags) url.searchParams.append('tags', tagValue)
+      const res = await ctx.fetch(url, { signal: ctx.signal, headers: authHeaders(ctx.config) })
+      if (!res.ok) throw new Error(`grafana returned ${res.status} for /api/annotations`)
+      const data = (await res.json()) as GrafanaAnnotation[]
+      return { summary: `${data.length} annotations over ${minutesAgo}m`, data }
     },
   },
 ]
