@@ -88,6 +88,23 @@ describe('elasticsearch telemetry source', () => {
     expect(body.size).toBe(100)
   })
 
+  it('lists indices matching the configured pattern', async () => {
+    const captured: CapturedRequest[] = []
+    const fetchImpl = fakeEsFetch(
+      {
+        '/_cat/indices/logs-*': [
+          { health: 'green', status: 'open', index: 'logs-2026.07.06', 'docs.count': '1000', 'store.size': '5mb' },
+        ],
+      },
+      captured,
+    )
+    const t = tool('list_indices')
+    const result = await t.execute(t.inputSchema.parse({}), contextWith(fetchImpl))
+    expect(result.summary).toBe('1 indices matching "logs-*"')
+    expect(captured[0]!.url.pathname).toBe('/_cat/indices/logs-*')
+    expect(captured[0]!.url.searchParams.get('format')).toBe('json')
+  })
+
   it('applies an api key header when configured', async () => {
     const captured: CapturedRequest[] = []
     const fetchImpl = fakeEsFetch({ '/logs-*/_search': { hits: { total: { value: 0, relation: 'eq' }, hits: [] } } }, captured)

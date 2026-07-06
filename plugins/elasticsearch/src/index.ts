@@ -43,6 +43,14 @@ interface EsSearchResponse {
   }
 }
 
+export interface EsCatIndex {
+  health: string
+  status: string
+  index: string
+  'docs.count': string
+  'store.size': string
+}
+
 interface EsClusterHealth {
   cluster_name: string
   status: 'green' | 'yellow' | 'red'
@@ -55,6 +63,13 @@ function authHeaders(config: ElasticsearchConfig): Record<string, string> {
     return { authorization: `Basic ${encoded}` }
   }
   return {}
+}
+
+async function esGet<T>(ctx: SourceContext<ElasticsearchConfig>, path: string): Promise<T> {
+  const url = new URL(path, ctx.config.url)
+  const res = await ctx.fetch(url, { signal: ctx.signal, headers: authHeaders(ctx.config) })
+  if (!res.ok) throw new Error(`elasticsearch returned ${res.status} for ${path}`)
+  return (await res.json()) as T
 }
 
 async function esPost<T>(ctx: SourceContext<ElasticsearchConfig>, path: string, body: unknown): Promise<T> {
@@ -99,6 +114,18 @@ const tools: ToolSpec<ElasticsearchConfig>[] = [
       const data = await esPost<EsSearchResponse>(ctx, `/${ctx.config.indexPattern}/_search`, body)
       const entries = flattenEsHits(data.hits.hits)
       return { summary: `${query}: ${entries.length} log lines over ${minutesAgo}m`, data: entries }
+    },
+  },
+  {
+    name: 'list_indices',
+    description: 'List indices matching the configured index pattern',
+    inputSchema: z.object({}),
+    scope: 'read',
+    costHint: 'cheap',
+    latencyHintMs: 500,
+    async execute(_input, ctx) {
+      const data = await esGet<EsCatIndex[]>(ctx, `/_cat/indices/${encodeURIComponent(ctx.config.indexPattern)}?format=json`)
+      return { summary: `${data.length} indices matching "${ctx.config.indexPattern}"`, data }
     },
   },
 ]
