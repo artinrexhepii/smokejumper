@@ -136,6 +136,9 @@ importers:
       '@smokejumper/plugin-docker':
         specifier: workspace:*
         version: link:../../plugins/docker
+      '@smokejumper/plugin-elasticsearch':
+        specifier: workspace:*
+        version: link:../../plugins/elasticsearch
       '@smokejumper/plugin-github-deploys':
         specifier: workspace:*
         version: link:../../plugins/github-deploys

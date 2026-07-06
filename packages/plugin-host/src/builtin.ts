@@ -2,6 +2,7 @@ import { createAlertmanagerAlertSource } from '@smokejumper/plugin-alertmanager'
 import { createCloudwatchTelemetrySource } from '@smokejumper/plugin-cloudwatch'
 import { createDatadogTelemetrySource } from '@smokejumper/plugin-datadog'
 import { createDockerTelemetrySource } from '@smokejumper/plugin-docker'
+import { createElasticsearchTelemetrySource } from '@smokejumper/plugin-elasticsearch'
 import { createGithubDeploysTelemetrySource } from '@smokejumper/plugin-github-deploys'
 import { createGrafanaTelemetrySource } from '@smokejumper/plugin-grafana'
 import { createHttpTelemetrySource } from '@smokejumper/plugin-http'
@@ -31,5 +32,6 @@ export function createBuiltinRegistry(): PluginRegistry {
   registry.register(createPagerdutyAlertSource())
   registry.register(createPagerdutyNotificationSink())
   registry.register(createGrafanaTelemetrySource())
+  registry.register(createElasticsearchTelemetrySource())
   return registry
 }

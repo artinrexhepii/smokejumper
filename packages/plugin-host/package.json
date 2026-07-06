@@ -13,6 +13,7 @@
     "@smokejumper/plugin-cloudwatch": "workspace:*",
     "@smokejumper/plugin-datadog": "workspace:*",
     "@smokejumper/plugin-docker": "workspace:*",
+    "@smokejumper/plugin-elasticsearch": "workspace:*",
     "@smokejumper/plugin-github-deploys": "workspace:*",
     "@smokejumper/plugin-grafana": "workspace:*",
     "@smokejumper/plugin-http": "workspace:*",
