@@ -130,6 +130,9 @@ importers:
       '@smokejumper/plugin-cloudwatch':
         specifier: workspace:*
         version: link:../../plugins/cloudwatch
+      '@smokejumper/plugin-datadog':
+        specifier: workspace:*
+        version: link:../../plugins/datadog
       '@smokejumper/plugin-docker':
         specifier: workspace:*
         version: link:../../plugins/docker

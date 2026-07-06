@@ -1,5 +1,6 @@
 import { createAlertmanagerAlertSource } from '@smokejumper/plugin-alertmanager'
 import { createCloudwatchTelemetrySource } from '@smokejumper/plugin-cloudwatch'
+import { createDatadogTelemetrySource } from '@smokejumper/plugin-datadog'
 import { createDockerTelemetrySource } from '@smokejumper/plugin-docker'
 import { createGithubDeploysTelemetrySource } from '@smokejumper/plugin-github-deploys'
 import { createHttpTelemetrySource } from '@smokejumper/plugin-http'
@@ -24,5 +25,6 @@ export function createBuiltinRegistry(): PluginRegistry {
   registry.register(createAlertmanagerAlertSource())
   registry.register(createLokiTelemetrySource())
   registry.register(createPrometheusTelemetrySource())
+  registry.register(createDatadogTelemetrySource())
   return registry
 }

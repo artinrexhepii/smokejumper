@@ -4,11 +4,12 @@ import * as host from '../src/index'
 import { createBuiltinRegistry } from '../src/builtin'
 
 describe('createBuiltinRegistry', () => {
-  it('registers all eleven first-party plugins under their pinned ids', () => {
+  it('registers all twelve first-party plugins under their pinned ids', () => {
     const registry = createBuiltinRegistry()
     expect(registry.manifests().map((m) => m.id).sort()).toEqual([
       'alertmanager',
       'cloudwatch',
+      'datadog',
       'docker',
       'github-deploys',
       'http',
@@ -29,6 +30,7 @@ describe('createBuiltinRegistry', () => {
     expect(registry.telemetrySource('kubernetes')).toBeDefined()
     expect(registry.telemetrySource('prometheus')).toBeDefined()
     expect(registry.telemetrySource('loki')).toBeDefined()
+    expect(registry.telemetrySource('datadog')).toBeDefined()
     expect(registry.notificationSink('slack')).toBeDefined()
     expect(registry.alertSource('docker')).toBeUndefined()
     expect(registry.telemetrySource('alertmanager')).toBeUndefined()

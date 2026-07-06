@@ -11,6 +11,7 @@
     "@smokejumper/db": "workspace:*",
     "@smokejumper/plugin-alertmanager": "workspace:*",
     "@smokejumper/plugin-cloudwatch": "workspace:*",
+    "@smokejumper/plugin-datadog": "workspace:*",
     "@smokejumper/plugin-docker": "workspace:*",
     "@smokejumper/plugin-github-deploys": "workspace:*",
     "@smokejumper/plugin-http": "workspace:*",
