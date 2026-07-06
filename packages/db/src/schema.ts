@@ -205,6 +205,22 @@ export const memoryEntries = pgTable('memory_entries', {
 
 export type MemoryEntry = typeof memoryEntries.$inferSelect
 
+export type RunbookSourceKind = 'upload' | 'paste' | 'url'
+
+export const runbooks = pgTable('runbooks', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  projectId: uuid('project_id').notNull().references(() => projects.id),
+  title: text('title').notNull(),
+  sourceKind: text('source_kind').$type<RunbookSourceKind>().notNull(),
+  sourceRef: text('source_ref'),
+  content: text('content').notNull(),
+  chunkCount: integer('chunk_count').notNull().default(0),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+export type Runbook = typeof runbooks.$inferSelect
+
 export type AuditActorType = 'user' | 'agent' | 'system'
 
 export const auditLog = pgTable('audit_log', {
