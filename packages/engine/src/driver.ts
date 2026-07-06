@@ -92,6 +92,24 @@ export interface SynthesisInput {
   runbooks?: Array<{ content: string; similarity: number; title: string }>
 }
 
+export interface ReviewInput {
+  incident: { title: string; severity: string; service: string }
+  diagnosis?: { rootCause: string; confidence: number; remediation: string; openQuestions: string[] }
+  findings: Array<{ specialist: string; summary: string; evidenceIds: string[] }>
+  evidence: Array<{ id: string; toolName: string; summary: string }>
+}
+
+export const reviewResultSchema = z.object({
+  summary: z.string(),
+  timeline: z.array(z.object({ at: z.string(), text: z.string() })),
+  rootCause: z.string(),
+  contributingFactors: z.array(z.string()),
+  actionItems: z.array(z.string()),
+  evidenceRefs: z.array(z.string()),
+})
+
+export type ReviewResult = z.infer<typeof reviewResultSchema>
+
 export interface DriverCallOptions {
   signal: AbortSignal
 }
@@ -101,4 +119,5 @@ export interface ModelDriver {
   plan(input: PlanInput, opts: DriverCallOptions): Promise<PlanResult>
   runSpecialist(input: SpecialistInput, tools: DriverTool[], opts: DriverCallOptions): Promise<SpecialistResult>
   synthesize(input: SynthesisInput): Promise<SynthesisResult>
+  draftReview(input: ReviewInput, opts?: DriverCallOptions): Promise<ReviewResult>
 }

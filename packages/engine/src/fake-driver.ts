@@ -46,5 +46,21 @@ export function createFakeDriver(): ModelDriver {
         openQuestions: ['Confirm the fake diagnosis against the real telemetry.'],
       }
     },
+    async draftReview(input) {
+      const timeline = input.evidence.map((entry, i) => ({
+        at: `step-${i + 1}`,
+        text: `${entry.toolName}: ${entry.summary}`,
+      }))
+      return {
+        summary: `Fake review: ${input.incident.title} affecting ${input.incident.service}`,
+        timeline,
+        rootCause: input.diagnosis?.rootCause ?? 'No diagnosis was reached before this incident was resolved.',
+        contributingFactors: input.findings.map((finding) => finding.summary),
+        actionItems: input.diagnosis
+          ? [input.diagnosis.remediation]
+          : ['Confirm the fake root cause against the real telemetry.'],
+        evidenceRefs: input.evidence.map((entry) => entry.id),
+      }
+    },
   }
 }

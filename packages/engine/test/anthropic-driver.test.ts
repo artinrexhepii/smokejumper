@@ -19,6 +19,7 @@ describe('createAnthropicDriver', () => {
     expect(driver.plan).toBeTypeOf('function')
     expect(driver.runSpecialist).toBeTypeOf('function')
     expect(driver.synthesize).toBeTypeOf('function')
+    expect(driver.draftReview).toBeTypeOf('function')
   })
 
   it('constructs a Mastra agent with a router model string without an API key', () => {

@@ -6,6 +6,7 @@ export type { EngineBudgets, EngineConfig, EngineModels } from './config'
 export {
   SPECIALIST_NAMES,
   planResultSchema,
+  reviewResultSchema,
   specialistNameSchema,
   specialistResultSchema,
   synthesisResultSchema,
@@ -18,6 +19,8 @@ export type {
   PlanInput,
   PlanResult,
   RecordedToolCall,
+  ReviewInput,
+  ReviewResult,
   SpecialistInput,
   SpecialistName,
   SpecialistResult,

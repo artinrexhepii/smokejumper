@@ -4,12 +4,14 @@ import { z } from 'zod'
 import type { EngineModels } from './config'
 import {
   planResultSchema,
+  reviewResultSchema,
   specialistResultSchema,
   synthesisResultSchema,
   triageResultSchema,
   type DriverTool,
   type ModelDriver,
   type PlanInput,
+  type ReviewInput,
   type SpecialistInput,
   type SynthesisInput,
   type TriageInput,
@@ -42,6 +44,12 @@ Cross-examine the specialists' findings and produce a diagnosis. Every claim in
 evidenceChain must cite the evidenceIds that support it. Anything you cannot support
 with evidence belongs in openQuestions or must be phrased as an unverified hypothesis.
 confidence is a number between 0 and 1.`
+
+const REVIEW_INSTRUCTIONS = `You are writing a post-incident review (postmortem) for a
+resolved production incident. Produce a clear summary, an ordered timeline grounded only
+in the evidence provided, a root cause, contributing factors, and concrete action items.
+Every entry in evidenceRefs must be one of the evidence ids provided — never invent an id.
+If no diagnosis is available, say so plainly in rootCause rather than speculating.`
 
 function anthropicModel(id: string): string {
   return `anthropic/${id}`
@@ -97,6 +105,26 @@ export function renderSynthesisPrompt(input: SynthesisInput): string {
       ? `Relevant runbook passages (advisory context only — cite via search_runbooks to make a claim evidence-backed):\n${runbooks}`
       : 'No relevant runbook passages found.',
     'Produce the diagnosis.',
+  ].join('\n\n')
+}
+
+function renderReviewPrompt(input: ReviewInput): string {
+  const diagnosis = input.diagnosis
+    ? [
+        `Root cause: ${input.diagnosis.rootCause}`,
+        `Confidence: ${input.diagnosis.confidence}`,
+        `Remediation: ${input.diagnosis.remediation}`,
+        `Open questions:\n${input.diagnosis.openQuestions.map((q) => `- ${q}`).join('\n') || '(none)'}`,
+      ].join('\n')
+    : 'No diagnosis was reached.'
+  const findings = input.findings.map((f) => `- [${f.specialist}] ${f.summary}`).join('\n')
+  const evidence = input.evidence.map((e) => `- ${e.id} (${e.toolName}): ${e.summary}`).join('\n')
+  return [
+    `Incident: ${input.incident.title} (severity ${input.incident.severity}, service ${input.incident.service})`,
+    `Diagnosis:\n${diagnosis}`,
+    `Findings:\n${findings || '(none)'}`,
+    `Ordered evidence chain:\n${evidence || '(none)'}`,
+    'Write the post-incident review.',
   ].join('\n\n')
 }
 
@@ -191,6 +219,19 @@ export function createAnthropicDriver(models: EngineModels): ModelDriver {
         structuredOutput: { schema: synthesisResultSchema },
       })
       return synthesisResultSchema.parse(result.object)
+    },
+    async draftReview(input, opts) {
+      const agent = new Agent({
+        id: 'smokejumper-review',
+        name: 'Smokejumper Review',
+        instructions: REVIEW_INSTRUCTIONS,
+        model: anthropicModel(models.synthesis),
+      })
+      const result = await agent.generate(renderReviewPrompt(input), {
+        abortSignal: opts?.signal,
+        structuredOutput: { schema: reviewResultSchema },
+      })
+      return reviewResultSchema.parse(result.object)
     },
   }
 }

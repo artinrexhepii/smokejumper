@@ -177,6 +177,16 @@ describe('investigate (fake driver)', () => {
       async synthesize() {
         return { rootCause: '', confidence: 0.5, evidenceChain: [], remediation: '', openQuestions: [] }
       },
+      async draftReview() {
+        return {
+          summary: '',
+          timeline: [],
+          rootCause: '',
+          contributingFactors: [],
+          actionItems: [],
+          evidenceRefs: [],
+        }
+      },
     }
     const investigator = createInvestigator({
       db,
