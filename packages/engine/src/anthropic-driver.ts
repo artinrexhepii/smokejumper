@@ -77,7 +77,7 @@ function renderSpecialistPrompt(input: SpecialistInput): string {
   ].join('\n')
 }
 
-function renderSynthesisPrompt(input: SynthesisInput): string {
+export function renderSynthesisPrompt(input: SynthesisInput): string {
   const findings = input.findings
     .map((f) => `- [${f.specialist}] ${f.summary} (evidence: ${f.evidenceIds.join(', ') || 'none'})`)
     .join('\n')
@@ -85,11 +85,17 @@ function renderSynthesisPrompt(input: SynthesisInput): string {
   const past = input.pastIncidents
     .map((p) => `- (similarity ${p.similarity.toFixed(2)}) ${p.content}`)
     .join('\n')
+  const runbooks = (input.runbooks ?? [])
+    .map((r) => `- (similarity ${r.similarity.toFixed(2)}) [${r.title}] ${r.content}`)
+    .join('\n')
   return [
     `Investigation brief: ${input.brief}`,
     `Specialist findings:\n${findings || '(none)'}`,
     `Evidence records:\n${evidence || '(none)'}`,
     past ? `Similar past incidents:\n${past}` : 'No similar past incidents on record.',
+    runbooks
+      ? `Relevant runbook passages (advisory context only — cite via search_runbooks to make a claim evidence-backed):\n${runbooks}`
+      : 'No relevant runbook passages found.',
     'Produce the diagnosis.',
   ].join('\n\n')
 }

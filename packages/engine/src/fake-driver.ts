@@ -35,8 +35,9 @@ export function createFakeDriver(): ModelDriver {
       return { summary: `${input.name}: ${tool.name} → ${call.summary}`, evidenceIds: [call.evidenceId] }
     },
     async synthesize(input) {
+      const topRunbook = input.runbooks?.[0]
       return {
-        rootCause: `Fake diagnosis based on triage: ${input.brief}`,
+        rootCause: `Fake diagnosis based on triage: ${input.brief}${topRunbook ? ` (runbook consulted: ${topRunbook.title})` : ''}`,
         confidence: 0.5,
         evidenceChain: input.findings
           .filter((finding) => finding.evidenceIds.length > 0)

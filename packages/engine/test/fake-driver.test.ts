@@ -87,6 +87,28 @@ describe('fake driver', () => {
     expect(result.rootCause).toContain('the brief')
     expect(result.evidenceChain).toEqual([{ claim: 'saw OOM kills', evidenceIds: ['ev-1'] }])
   })
+
+  it('mentions the top runbook in the root cause when runbooks are supplied', async () => {
+    const result = await driver.synthesize({
+      brief: 'the brief',
+      findings: [],
+      evidence: [],
+      pastIncidents: [],
+      runbooks: [{ content: 'restart the pods', similarity: 0.9, title: 'Restart guide' }],
+    })
+    expect(result.rootCause).toContain('Restart guide')
+  })
+
+  it('leaves the root cause unchanged when runbooks is omitted or empty', async () => {
+    const result = await driver.synthesize({
+      brief: 'the brief',
+      findings: [],
+      evidence: [],
+      pastIncidents: [],
+      runbooks: [],
+    })
+    expect(result.rootCause).toBe('Fake diagnosis based on triage: the brief')
+  })
 })
 
 describe('validatePlan', () => {
