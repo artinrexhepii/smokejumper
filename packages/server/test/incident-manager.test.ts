@@ -3,9 +3,12 @@ import {
   createOrganization,
   createProject,
   createTestDb,
+  getIncident,
+  getReviewByIncident,
   updateIncidentStatus,
   type Db,
 } from '@smokejumper/db'
+import { createFakeDriver } from '@smokejumper/engine'
 import type { IncidentEvent, NormalizedAlert } from '@smokejumper/plugin-sdk'
 import { createBus, type IncidentBus } from '../src/bus.ts'
 import { createIncidentManager } from '../src/incident-manager.ts'
@@ -111,5 +114,71 @@ describe('createIncidentManager', () => {
     expect(events).toHaveLength(2)
     expect(events[0]).toMatchObject({ type: 'incident.opened' })
     expect(events[1]).toMatchObject({ type: 'incident.opened' })
+  })
+})
+
+describe('resolve', () => {
+  it('marks the incident resolved and publishes incident.resolved', async () => {
+    const { db, projectId, bus, events } = await setup()
+    const manager = createIncidentManager({ db, bus })
+    const [opened] = await manager.ingest(projectId, [makeAlert()])
+    const incident = opened!.incident
+    await manager.resolve(incident.id)
+    expect((await getIncident(db, incident.id))?.status).toBe('resolved')
+    expect(events.at(-1)).toMatchObject({ type: 'incident.resolved', incidentId: incident.id, projectId })
+  })
+
+  it('does nothing to reviews when no driver is configured', async () => {
+    const { db, projectId, bus } = await setup()
+    const manager = createIncidentManager({ db, bus })
+    const [opened] = await manager.ingest(projectId, [makeAlert()])
+    const incident = opened!.incident
+    await manager.resolve(incident.id)
+    expect(await getReviewByIncident(db, incident.id)).toBeUndefined()
+  })
+
+  it('drafts a review when a driver is configured and none exists yet', async () => {
+    const { db, projectId, bus } = await setup()
+    const manager = createIncidentManager({ db, bus, driver: createFakeDriver() })
+    const [opened] = await manager.ingest(projectId, [makeAlert()])
+    const incident = opened!.incident
+    await manager.resolve(incident.id)
+    const review = await getReviewByIncident(db, incident.id)
+    expect(review?.status).toBe('draft')
+    expect(review?.generated.rootCause).toContain('No diagnosis')
+  })
+
+  it('does not draft a second review when one already exists', async () => {
+    const { db, projectId, bus } = await setup()
+    let calls = 0
+    const countingDriver = {
+      ...createFakeDriver(),
+      async draftReview(input: Parameters<ReturnType<typeof createFakeDriver>['draftReview']>[0]) {
+        calls += 1
+        return createFakeDriver().draftReview(input)
+      },
+    }
+    const manager = createIncidentManager({ db, bus, driver: countingDriver })
+    const [opened] = await manager.ingest(projectId, [makeAlert()])
+    const incident = opened!.incident
+    await manager.resolve(incident.id)
+    await manager.resolve(incident.id)
+    expect(calls).toBe(1)
+  })
+
+  it('still resolves the incident when drafting the review throws', async () => {
+    const { db, projectId, bus } = await setup()
+    const throwingDriver = {
+      ...createFakeDriver(),
+      async draftReview(): Promise<never> {
+        throw new Error('model unavailable')
+      },
+    }
+    const manager = createIncidentManager({ db, bus, driver: throwingDriver })
+    const [opened] = await manager.ingest(projectId, [makeAlert()])
+    const incident = opened!.incident
+    await expect(manager.resolve(incident.id)).resolves.toBeUndefined()
+    expect((await getIncident(db, incident.id))?.status).toBe('resolved')
+    expect(await getReviewByIncident(db, incident.id)).toBeUndefined()
   })
 })
