@@ -7,6 +7,7 @@ import { useIncidentEvents } from '../../../lib/useIncidentEvents'
 import { useSession } from '../../../lib/useSession'
 import { SeverityBadge, StatusBadge } from '../../../components/Badge'
 import { DiagnosisCard } from '../../../components/DiagnosisCard'
+import { ReviewPanel } from '../../../components/ReviewPanel'
 import { EvidenceItem } from '../../../components/EvidenceItem'
 import { FindingsList } from '../../../components/FindingsList'
 import { TraceTimeline } from '../../../components/TraceTimeline'
@@ -75,6 +76,7 @@ export default function IncidentPage({ params }: { params: Promise<{ id: string 
           <p className="empty">No diagnosis yet — the investigation is still running.</p>
         </section>
       )}
+      <ReviewPanel incidentId={id} />
       <section className="card">
         <h2>Evidence log</h2>
         {evidence.length === 0 ? (

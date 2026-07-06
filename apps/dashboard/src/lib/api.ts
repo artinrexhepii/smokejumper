@@ -166,6 +166,29 @@ export interface UpdateInstanceBody {
   enabled?: boolean
 }
 
+export type ReviewStatus = 'draft' | 'approved'
+
+export interface ReviewBody {
+  summary: string
+  timeline: Array<{ at: string; text: string }>
+  rootCause: string
+  contributingFactors: string[]
+  actionItems: string[]
+  evidenceRefs: string[]
+}
+
+export interface IncidentReview {
+  id: string
+  incidentId: string
+  status: ReviewStatus
+  generated: ReviewBody
+  edited: ReviewBody | null
+  approvedBy: string | null
+  approvedAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+
 export class ApiError extends Error {
   readonly status: number
 
@@ -248,6 +271,29 @@ export function deleteInstance(id: string): Promise<void> {
 
 export function checkInstanceHealth(id: string): Promise<{ ok: boolean; message?: string }> {
   return apiFetch(`/api/instances/${id}/health`, { method: 'POST' })
+}
+
+export function getReview(incidentId: string): Promise<IncidentReview> {
+  return apiFetch(`/api/incidents/${incidentId}/review`)
+}
+
+export function generateReview(incidentId: string): Promise<IncidentReview> {
+  return apiFetch(`/api/incidents/${incidentId}/review`, { method: 'POST' })
+}
+
+export function updateReview(incidentId: string, edited: ReviewBody): Promise<IncidentReview> {
+  return apiFetch(`/api/incidents/${incidentId}/review`, {
+    method: 'PATCH',
+    body: JSON.stringify({ edited }),
+  })
+}
+
+export function approveReview(incidentId: string): Promise<IncidentReview> {
+  return apiFetch(`/api/incidents/${incidentId}/review/approve`, { method: 'POST' })
+}
+
+export function reviewExportUrl(incidentId: string): string {
+  return `${API_URL}/api/incidents/${incidentId}/review/export`
 }
 
 export type RunbookSourceKind = 'upload' | 'paste' | 'url'

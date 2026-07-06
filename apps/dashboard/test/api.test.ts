@@ -1,12 +1,15 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   ApiError,
+  approveReview,
   checkInstanceHealth,
   createInstance,
   createRunbook,
   deleteInstance,
   deleteRunbook,
+  generateReview,
   getIncident,
+  getReview,
   listIncidents,
   listInstances,
   listPlugins,
@@ -15,8 +18,10 @@ import {
   login,
   logout,
   me,
+  reviewExportUrl,
   submitVerdict,
   updateInstance,
+  updateReview,
 } from '../src/lib/api'
 
 function stubFetch(status: number, body?: unknown) {
@@ -207,5 +212,69 @@ describe('api client', () => {
     })
     const session = await me()
     expect(session.orgs[0]!.role).toBe('owner')
+  })
+
+  it('fetches the review for an incident', async () => {
+    const impl = stubFetch(200, {
+      id: 'rev-1',
+      incidentId: 'inc-1',
+      status: 'draft',
+      generated: {
+        summary: 's',
+        timeline: [],
+        rootCause: 'r',
+        contributingFactors: [],
+        actionItems: [],
+        evidenceRefs: [],
+      },
+      edited: null,
+      approvedBy: null,
+      approvedAt: null,
+      createdAt: '2026-07-06T00:00:00.000Z',
+      updatedAt: '2026-07-06T00:00:00.000Z',
+    })
+    const review = await getReview('inc-1')
+    expect((impl.mock.calls[0]! as unknown as [string, RequestInit])[0]).toBe(
+      'http://localhost:3400/api/incidents/inc-1/review',
+    )
+    expect(review.status).toBe('draft')
+  })
+
+  it('generates a review with a POST and no body', async () => {
+    const impl = stubFetch(201, { id: 'rev-1', status: 'draft' })
+    await generateReview('inc-1')
+    const [url, init] = impl.mock.calls[0]! as unknown as [string, RequestInit]
+    expect(url).toBe('http://localhost:3400/api/incidents/inc-1/review')
+    expect(init.method).toBe('POST')
+    expect(init.body).toBeUndefined()
+  })
+
+  it('updates the review with the edited body', async () => {
+    const impl = stubFetch(200, { id: 'rev-1', status: 'draft' })
+    const edited = {
+      summary: 's',
+      timeline: [],
+      rootCause: 'r',
+      contributingFactors: [],
+      actionItems: [],
+      evidenceRefs: [],
+    }
+    await updateReview('inc-1', edited)
+    const [url, init] = impl.mock.calls[0]! as unknown as [string, RequestInit]
+    expect(url).toBe('http://localhost:3400/api/incidents/inc-1/review')
+    expect(init.method).toBe('PATCH')
+    expect(JSON.parse(init.body as string)).toEqual({ edited })
+  })
+
+  it('approves the review', async () => {
+    const impl = stubFetch(200, { id: 'rev-1', status: 'approved' })
+    await approveReview('inc-1')
+    const [url, init] = impl.mock.calls[0]! as unknown as [string, RequestInit]
+    expect(url).toBe('http://localhost:3400/api/incidents/inc-1/review/approve')
+    expect(init.method).toBe('POST')
+  })
+
+  it('builds the review export url', () => {
+    expect(reviewExportUrl('inc-1')).toBe('http://localhost:3400/api/incidents/inc-1/review/export')
   })
 })
