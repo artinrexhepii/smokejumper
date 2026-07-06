@@ -1,29 +1,52 @@
 import { describe, expect, it } from 'vitest'
+import { describeConfig } from '@smokejumper/plugin-sdk'
 import * as host from '../src/index'
 import { createBuiltinRegistry } from '../src/builtin'
 
 describe('createBuiltinRegistry', () => {
-  it('registers all eight first-party plugins under their pinned ids', () => {
+  it('registers all eleven first-party plugins under their pinned ids', () => {
     const registry = createBuiltinRegistry()
     expect(registry.manifests().map((m) => m.id).sort()).toEqual([
+      'alertmanager',
       'cloudwatch',
       'docker',
       'github-deploys',
       'http',
       'kubernetes',
+      'loki',
+      'prometheus',
       'sentry',
       'slack',
       'webhook',
     ])
     expect(registry.alertSource('webhook')).toBeDefined()
     expect(registry.alertSource('sentry')).toBeDefined()
+    expect(registry.alertSource('alertmanager')).toBeDefined()
     expect(registry.telemetrySource('docker')).toBeDefined()
     expect(registry.telemetrySource('http')).toBeDefined()
     expect(registry.telemetrySource('github-deploys')).toBeDefined()
     expect(registry.telemetrySource('cloudwatch')).toBeDefined()
     expect(registry.telemetrySource('kubernetes')).toBeDefined()
+    expect(registry.telemetrySource('prometheus')).toBeDefined()
+    expect(registry.telemetrySource('loki')).toBeDefined()
     expect(registry.notificationSink('slack')).toBeDefined()
     expect(registry.alertSource('docker')).toBeUndefined()
+    expect(registry.telemetrySource('alertmanager')).toBeUndefined()
+  })
+
+  it('produces a describeConfig-safe descriptor for every builtin manifest', () => {
+    const registry = createBuiltinRegistry()
+    const manifests = registry.manifests()
+    expect(manifests.length).toBeGreaterThan(0)
+
+    const supportedTypes = ['string', 'number', 'boolean', 'url', 'enum']
+    for (const manifest of manifests) {
+      expect(() => describeConfig(manifest)).not.toThrow()
+      const descriptor = describeConfig(manifest)
+      for (const field of [...descriptor.config, ...descriptor.credentials]) {
+        expect(supportedTypes).toContain(field.type)
+      }
+    }
   })
 })
 

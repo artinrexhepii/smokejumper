@@ -1,8 +1,11 @@
+import { createAlertmanagerAlertSource } from '@smokejumper/plugin-alertmanager'
 import { createCloudwatchTelemetrySource } from '@smokejumper/plugin-cloudwatch'
 import { createDockerTelemetrySource } from '@smokejumper/plugin-docker'
 import { createGithubDeploysTelemetrySource } from '@smokejumper/plugin-github-deploys'
 import { createHttpTelemetrySource } from '@smokejumper/plugin-http'
 import { createKubernetesTelemetrySource } from '@smokejumper/plugin-kubernetes'
+import { createLokiTelemetrySource } from '@smokejumper/plugin-loki'
+import { createPrometheusTelemetrySource } from '@smokejumper/plugin-prometheus'
 import { createSentryAlertSource } from '@smokejumper/plugin-sentry'
 import { createSlackNotificationSink } from '@smokejumper/plugin-slack'
 import { createWebhookAlertSource } from '@smokejumper/plugin-webhook'
@@ -18,5 +21,8 @@ export function createBuiltinRegistry(): PluginRegistry {
   registry.register(createSlackNotificationSink())
   registry.register(createCloudwatchTelemetrySource())
   registry.register(createKubernetesTelemetrySource())
+  registry.register(createAlertmanagerAlertSource())
+  registry.register(createLokiTelemetrySource())
+  registry.register(createPrometheusTelemetrySource())
   return registry
 }
