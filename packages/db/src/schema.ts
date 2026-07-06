@@ -236,3 +236,31 @@ export const auditLog = pgTable('audit_log', {
 })
 
 export type AuditEntry = typeof auditLog.$inferSelect
+
+export type ReviewStatus = 'draft' | 'approved'
+
+export interface ReviewBody {
+  summary: string
+  timeline: Array<{ at: string; text: string }>
+  rootCause: string
+  contributingFactors: string[]
+  actionItems: string[]
+  evidenceRefs: string[]
+}
+
+export const incidentReviews = pgTable('incident_reviews', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  incidentId: uuid('incident_id')
+    .notNull()
+    .references(() => incidents.id)
+    .unique(),
+  status: text('status').$type<ReviewStatus>().notNull().default('draft'),
+  generated: jsonb('generated').$type<ReviewBody>().notNull(),
+  edited: jsonb('edited').$type<ReviewBody>(),
+  approvedBy: uuid('approved_by').references(() => users.id),
+  approvedAt: timestamp('approved_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+export type IncidentReview = typeof incidentReviews.$inferSelect
