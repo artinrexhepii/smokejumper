@@ -124,6 +124,9 @@ importers:
       '@smokejumper/db':
         specifier: workspace:*
         version: link:../db
+      '@smokejumper/plugin-cloudwatch':
+        specifier: workspace:*
+        version: link:../../plugins/cloudwatch
       '@smokejumper/plugin-docker':
         specifier: workspace:*
         version: link:../../plugins/docker
@@ -133,6 +136,9 @@ importers:
       '@smokejumper/plugin-http':
         specifier: workspace:*
         version: link:../../plugins/http
+      '@smokejumper/plugin-kubernetes':
+        specifier: workspace:*
+        version: link:../../plugins/kubernetes
       '@smokejumper/plugin-sdk':
         specifier: workspace:*
         version: link:../plugin-sdk

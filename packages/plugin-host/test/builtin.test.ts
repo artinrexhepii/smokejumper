@@ -3,12 +3,14 @@ import * as host from '../src/index'
 import { createBuiltinRegistry } from '../src/builtin'
 
 describe('createBuiltinRegistry', () => {
-  it('registers all six first-party plugins under their pinned ids', () => {
+  it('registers all eight first-party plugins under their pinned ids', () => {
     const registry = createBuiltinRegistry()
     expect(registry.manifests().map((m) => m.id).sort()).toEqual([
+      'cloudwatch',
       'docker',
       'github-deploys',
       'http',
+      'kubernetes',
       'sentry',
       'slack',
       'webhook',
@@ -18,6 +20,8 @@ describe('createBuiltinRegistry', () => {
     expect(registry.telemetrySource('docker')).toBeDefined()
     expect(registry.telemetrySource('http')).toBeDefined()
     expect(registry.telemetrySource('github-deploys')).toBeDefined()
+    expect(registry.telemetrySource('cloudwatch')).toBeDefined()
+    expect(registry.telemetrySource('kubernetes')).toBeDefined()
     expect(registry.notificationSink('slack')).toBeDefined()
     expect(registry.alertSource('docker')).toBeUndefined()
   })

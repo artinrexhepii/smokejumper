@@ -9,9 +9,11 @@
   },
   "dependencies": {
     "@smokejumper/db": "workspace:*",
+    "@smokejumper/plugin-cloudwatch": "workspace:*",
     "@smokejumper/plugin-docker": "workspace:*",
     "@smokejumper/plugin-github-deploys": "workspace:*",
     "@smokejumper/plugin-http": "workspace:*",
+    "@smokejumper/plugin-kubernetes": "workspace:*",
     "@smokejumper/plugin-sdk": "workspace:*",
     "@smokejumper/plugin-sentry": "workspace:*",
     "@smokejumper/plugin-slack": "workspace:*",
