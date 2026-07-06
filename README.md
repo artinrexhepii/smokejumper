@@ -1,5 +1,10 @@
 # Smokejumper
 
+[![CI](https://github.com/artinrexhepii/smokejumper/actions/workflows/ci.yml/badge.svg)](https://github.com/artinrexhepii/smokejumper/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+![Node](https://img.shields.io/badge/node-%3E%3D20.9-brightgreen)
+![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6)
+
 **The open-source AI incident copilot.** When an alert fires, an AI agent
 investigates it the way a senior on-call engineer would — pulls logs, checks
 infrastructure state, correlates symptoms across services — and delivers a
@@ -43,7 +48,7 @@ No Anthropic API key needed: the default `.env` enables
 deterministic scripted model responses, entirely offline.
 
 ```bash
-git clone https://github.com/artinrexhepi/smokejumper && cd smokejumper
+git clone https://github.com/artinrexhepii/smokejumper && cd smokejumper
 cp .env.example .env && echo "SMOKEJUMPER_ENCRYPTION_KEY=$(openssl rand -base64 32)" >> .env
 docker compose -f docker-compose.yml -f demo/docker-compose.yml up -d --build
 ```
