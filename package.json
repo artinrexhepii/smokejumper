@@ -6,6 +6,7 @@
   "engines": { "node": ">=20.9" },
   "scripts": {
     "test": "vitest run",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
     "typecheck": "tsc --noEmit",
     "dev:dashboard": "pnpm --filter @smokejumper/dashboard dev",
     "chaos": "pnpm --filter @smokejumper/demo chaos",
