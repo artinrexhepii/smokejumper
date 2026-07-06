@@ -1,3 +1,6 @@
+import { addMemoryEntry, deleteRunbookChunks, type Db } from '@smokejumper/db'
+import type { Embedder } from './memory'
+
 const CHUNK_TARGET_SIZE = 800
 
 function packOnBoundary(units: string[], joiner: string): string[] {
@@ -16,6 +19,30 @@ function packOnBoundary(units: string[], joiner: string): string[] {
   }
   if (current !== '') chunks.push(current)
   return chunks
+}
+
+export async function embedRunbook(opts: {
+  db: Db
+  embedder?: Embedder
+  runbookId: string
+  projectId: string
+  title: string
+  content: string
+}): Promise<number> {
+  if (!opts.embedder) return 0
+  await deleteRunbookChunks(opts.db, opts.runbookId)
+  const chunks = chunkRunbook(opts.content)
+  for (const [chunkIndex, chunk] of chunks.entries()) {
+    const embedding = await opts.embedder(chunk)
+    await addMemoryEntry(opts.db, {
+      projectId: opts.projectId,
+      kind: 'runbook',
+      content: chunk,
+      embedding,
+      metadata: { runbookId: opts.runbookId, title: opts.title, chunkIndex },
+    })
+  }
+  return chunks.length
 }
 
 export function chunkRunbook(content: string): string[] {
