@@ -136,6 +136,8 @@ The migration+seed Job creates the initial org, user (`admin@example.com` /
 | `oidc.{enabled,issuer,clientId,clientSecret,defaultOrg}` | disabled | SSO; when disabled the server is password-only |
 | `publicBaseUrl` | `http://localhost:3400` | externally-reachable server URL (OIDC redirect + alert ingest URLs) |
 | `dashboardUrl` | `http://localhost:3000` | post-login redirect target |
+| `dashboardOrigin` | `http://localhost:3000` | CORS/SSE allowed origin; only matters for a split-origin dashboard/API deploy |
+| `secureCookies` | `false` | set `true` (or `--set secureCookies=true`) when the server is served over TLS |
 | `ingress.{enabled,host}` | disabled | single-host Ingress: `/api`,`/ingest`,`/healthz` → server, `/` → dashboard |
 | `replicaCount` | `1` | server/dashboard replicas |
 | `resources` | `{}` | server/dashboard container resources |

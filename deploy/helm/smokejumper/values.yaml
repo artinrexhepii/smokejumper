@@ -1,6 +1,7 @@
 nameOverride: ""
 fullnameOverride: ""
 
+# server boot runs migrations with no advisory lock; keep at 1 or ensure only one replica migrates
 replicaCount: 1
 
 image:
