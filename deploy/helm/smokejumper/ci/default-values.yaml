@@ -1,0 +1,6 @@
+image:
+  server:
+    tag: ci
+  dashboard:
+    tag: ci
+encryptionKey: dGVzdC1lbmNyeXB0aW9uLWtleS0zMi1ieXRlcy1sb25nISE=

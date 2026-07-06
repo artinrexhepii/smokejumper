@@ -1,0 +1,12 @@
+image:
+  server:
+    tag: ci
+  dashboard:
+    tag: ci
+encryptionKey: dGVzdC1lbmNyeXB0aW9uLWtleS0zMi1ieXRlcy1sb25nISE=
+oidc:
+  enabled: true
+  issuer: https://idp.example.com
+  clientId: smokejumper
+  clientSecret: super-secret
+  defaultOrg: acme
