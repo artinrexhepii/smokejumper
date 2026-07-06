@@ -87,6 +87,20 @@ describe('alertmanager alert source', () => {
     expect(alert.labels).toEqual({ alertname: 'NodeDown', job: 'node-exporter' })
   })
 
+  it('falls through an empty annotation to the next candidate', () => {
+    const emptySummary = {
+      ...alertmanagerWebhook,
+      alerts: [
+        {
+          ...alertmanagerWebhook.alerts[0]!,
+          annotations: { summary: '', description: 'the real description' },
+        },
+      ],
+    }
+    const alert = (source.normalize(emptySummary, config) as NormalizedAlert[])[0]!
+    expect(alert.title).toBe('the real description')
+  })
+
   it('reads the severity label from a custom-configured label name', () => {
     const customLabel = { severityLabel: 'priority', token: 'am-secret' }
     const withPriority = {

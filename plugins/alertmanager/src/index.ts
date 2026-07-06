@@ -68,8 +68,8 @@ function toIso(value: string): string {
 
 function toNormalizedAlert(alert: AlertmanagerAlert, severityLabel: string): NormalizedAlert {
   const { labels, annotations } = alert
-  const title = annotations.summary ?? annotations.description ?? labels.alertname ?? 'alert'
-  const service = labels.service ?? labels.job ?? labels.namespace ?? labels.alertname ?? 'unknown'
+  const title = annotations.summary || annotations.description || labels.alertname || 'alert'
+  const service = labels.service || labels.job || labels.namespace || labels.alertname || 'unknown'
   const dedupKey = alert.fingerprint ?? `${labels.alertname ?? 'unknown'}:${service}`
   return {
     title,
