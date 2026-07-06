@@ -1,0 +1,22 @@
+{
+  "name": "@smokejumper/plugin-cloudwatch",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-cloudwatch": "^3.1079.0",
+    "@aws-sdk/client-cloudwatch-logs": "^3.1079.0",
+    "@aws-sdk/credential-providers": "^3.1079.0",
+    "@smokejumper/plugin-sdk": "workspace:*"
+  },
+  "peerDependencies": {
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "zod": "^3.25.0"
+  }
+}
