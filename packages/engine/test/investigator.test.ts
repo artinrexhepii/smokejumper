@@ -2,6 +2,7 @@ import {
   createIncident,
   createOrganization,
   createProject,
+  createRunbook,
   createTestDb,
   getIncidentDetail,
   searchMemory,
@@ -268,5 +269,38 @@ describe('investigate (fake driver)', () => {
     await makeInvestigator(db, bus, []).investigate(incident.id)
     const detail = await getIncidentDetail(db, incident.id)
     expect(detail!.evidence.filter((record) => record.toolName === 'search_runbooks')).toHaveLength(0)
+  })
+
+  it('offline e2e: a seeded runbook produces cited search_runbooks evidence and reaches synthesis', async () => {
+    const db = await createTestDb()
+    const { project, incident } = await seedIncident(db)
+    const { bus } = collectingBus()
+    const runbookEmbedder = async () => new Array<number>(1536).fill(0.7)
+    const runbook = await createRunbook(db, {
+      projectId: project.id,
+      title: 'Error rate spike runbook',
+      sourceKind: 'paste',
+      content: 'Check the load balancer health checks and recent deploys before anything else.',
+    })
+    await embedRunbook({
+      db,
+      embedder: runbookEmbedder,
+      runbookId: runbook.id,
+      projectId: project.id,
+      title: runbook.title,
+      content: runbook.content,
+    })
+
+    await makeInvestigator(db, bus, [], { embedder: runbookEmbedder }).investigate(incident.id)
+
+    const detail = await getIncidentDetail(db, incident.id)
+    expect(detail?.incident.status).toBe('diagnosed')
+
+    const runbookEvidence = detail!.evidence.filter((record) => record.toolName === 'search_runbooks')
+    expect(runbookEvidence.length).toBeGreaterThan(0)
+    const cited = runbookEvidence[0]!.output as Array<{ title: string }>
+    expect(cited[0]!.title).toBe('Error rate spike runbook')
+
+    expect(detail!.diagnosis!.rootCause).toContain('Error rate spike runbook')
   })
 })
