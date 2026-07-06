@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { AppsV1Api, CoreV1Api, KubeConfig, Observable } from '@kubernetes/client-node'
-import type { ConfigurationOptions } from '@kubernetes/client-node'
+import type { ConfigurationOptions, V1ContainerState } from '@kubernetes/client-node'
 import type { TelemetrySource, ToolSpec } from '@smokejumper/plugin-sdk'
 
 export const kubernetesConfigSchema = z.object({
@@ -28,6 +28,10 @@ function loadKubeConfig(config: KubernetesConfig): KubeConfig {
 
 function coreApi(config: KubernetesConfig): CoreV1Api {
   return loadKubeConfig(config).makeApiClient(CoreV1Api)
+}
+
+function appsApi(config: KubernetesConfig): AppsV1Api {
+  return loadKubeConfig(config).makeApiClient(AppsV1Api)
 }
 
 // The generated client has no per-request signal option; the only abort channel
@@ -62,6 +66,16 @@ export function formatAge(since: Date | string | undefined, now: number = Date.n
   return `${Math.floor(hours / 24)}d`
 }
 
+export function describeContainerState(state: V1ContainerState | undefined): string {
+  if (!state) return 'unknown'
+  if (state.running) return 'running'
+  if (state.waiting) return `waiting: ${state.waiting.reason ?? 'unknown'}`
+  if (state.terminated) {
+    return `terminated: ${state.terminated.reason ?? 'unknown'} (exit ${state.terminated.exitCode ?? '?'})`
+  }
+  return 'unknown'
+}
+
 const tools: ToolSpec<KubernetesConfig>[] = [
   {
     name: 'list_pods',
@@ -88,6 +102,129 @@ const tools: ToolSpec<KubernetesConfig>[] = [
         }
       })
       return { summary: `${data.length} pods in ${ns}`, data }
+    },
+  },
+  {
+    name: 'pod_logs',
+    description: 'Fetch recent logs from a pod container',
+    inputSchema: z.object({
+      pod: z.string().min(1),
+      namespace: z.string().optional(),
+      container: z.string().optional(),
+      tailLines: z.number().int().positive().max(5000).default(200),
+      previous: z.boolean().default(false),
+    }),
+    scope: 'read',
+    costHint: 'moderate',
+    latencyHintMs: 800,
+    async execute(input, ctx) {
+      const { pod, namespace, container, tailLines, previous } = input as {
+        pod: string
+        namespace?: string
+        container?: string
+        tailLines: number
+        previous: boolean
+      }
+      const ns = namespace ?? ctx.config.namespace
+      const logs = await coreApi(ctx.config).readNamespacedPodLog(
+        { name: pod, namespace: ns, container, tailLines, previous },
+        abortOptions(ctx.signal),
+      )
+      return { summary: `logs for ${pod} (${ns})`, data: logs }
+    },
+  },
+  {
+    name: 'describe_pod',
+    description: 'Describe a pod: phase, conditions, container restart/last-state reasons, and recent events',
+    inputSchema: z.object({ pod: z.string().min(1), namespace: z.string().optional() }),
+    scope: 'read',
+    costHint: 'moderate',
+    latencyHintMs: 700,
+    async execute(input, ctx) {
+      const { pod, namespace } = input as { pod: string; namespace?: string }
+      const ns = namespace ?? ctx.config.namespace
+      const api = coreApi(ctx.config)
+      const podInfo = await api.readNamespacedPod({ name: pod, namespace: ns }, abortOptions(ctx.signal))
+      const eventList = await api.listNamespacedEvent(
+        { namespace: ns, fieldSelector: `involvedObject.name=${pod}` },
+        abortOptions(ctx.signal),
+      )
+      const containers = (podInfo.status?.containerStatuses ?? []).map((c) => ({
+        name: c.name,
+        ready: c.ready ?? false,
+        restartCount: c.restartCount ?? 0,
+        state: describeContainerState(c.state),
+        lastStateReason: c.lastState?.terminated?.reason ?? c.lastState?.waiting?.reason ?? null,
+      }))
+      const conditions = (podInfo.status?.conditions ?? []).map((c) => ({
+        type: c.type,
+        status: c.status,
+        reason: c.reason ?? null,
+      }))
+      const events = (eventList.items ?? []).map((e) => ({
+        type: e.type ?? '',
+        reason: e.reason ?? '',
+        message: e.message ?? '',
+        count: e.count ?? 1,
+      }))
+      return {
+        summary: `${pod}: ${podInfo.status?.phase ?? 'Unknown'}, ${containers.length} containers, ${events.length} events`,
+        data: { phase: podInfo.status?.phase ?? 'Unknown', conditions, containers, events },
+      }
+    },
+  },
+  {
+    name: 'list_events',
+    description: 'List recent events in a namespace within a time window',
+    inputSchema: z.object({
+      namespace: z.string().optional(),
+      sinceMinutes: z.number().int().positive().default(30),
+    }),
+    scope: 'read',
+    costHint: 'cheap',
+    latencyHintMs: 400,
+    async execute(input, ctx) {
+      const { namespace, sinceMinutes } = input as { namespace?: string; sinceMinutes: number }
+      const ns = namespace ?? ctx.config.namespace
+      const cutoff = Date.now() - sinceMinutes * 60_000
+      const list = await coreApi(ctx.config).listNamespacedEvent({ namespace: ns }, abortOptions(ctx.signal))
+      const data = (list.items ?? [])
+        .filter((e) => {
+          const stamp = e.lastTimestamp ?? e.eventTime ?? e.metadata?.creationTimestamp
+          if (!stamp) return true
+          const time = stamp instanceof Date ? stamp.getTime() : Date.parse(String(stamp))
+          return Number.isNaN(time) || time >= cutoff
+        })
+        .map((e) => ({
+          type: e.type ?? '',
+          reason: e.reason ?? '',
+          message: e.message ?? '',
+          involvedObject: `${e.involvedObject?.kind ?? ''}/${e.involvedObject?.name ?? ''}`,
+          count: e.count ?? 1,
+        }))
+      return { summary: `${data.length} events in ${ns}`, data }
+    },
+  },
+  {
+    name: 'list_deployments',
+    description: 'List deployments with desired/ready/available replicas, image, and availability',
+    inputSchema: z.object({ namespace: z.string().optional() }),
+    scope: 'read',
+    costHint: 'cheap',
+    latencyHintMs: 400,
+    async execute(input, ctx) {
+      const { namespace } = input as { namespace?: string }
+      const ns = namespace ?? ctx.config.namespace
+      const list = await appsApi(ctx.config).listNamespacedDeployment({ namespace: ns }, abortOptions(ctx.signal))
+      const data = (list.items ?? []).map((d) => ({
+        name: d.metadata?.name ?? '',
+        desired: d.spec?.replicas ?? 0,
+        ready: d.status?.readyReplicas ?? 0,
+        available: d.status?.availableReplicas ?? 0,
+        image: d.spec?.template?.spec?.containers?.[0]?.image ?? '',
+        availability: (d.status?.conditions ?? []).find((c) => c.type === 'Available')?.status ?? 'Unknown',
+      }))
+      return { summary: `${data.length} deployments in ${ns}`, data }
     },
   },
 ]
