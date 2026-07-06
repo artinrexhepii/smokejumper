@@ -198,7 +198,11 @@ export function registerInstanceRoutes(app: FastifyInstance, deps: PluginRoutesD
     let credentials: Record<string, unknown> | undefined
     if (parsed.data.credentials !== undefined) {
       if (manifest.credentialSchema) {
-        const result = manifest.credentialSchema.safeParse(parsed.data.credentials)
+        const stored = instance.credentialsEncrypted
+          ? (decryptJson(instance.credentialsEncrypted, deps.encryptionKey) as Record<string, unknown>)
+          : {}
+        const merged = { ...stored, ...parsed.data.credentials }
+        const result = manifest.credentialSchema.safeParse(merged)
         if (!result.success) return reply.code(400).send({ error: 'invalid credentials' })
         credentials = result.data as Record<string, unknown>
       } else {

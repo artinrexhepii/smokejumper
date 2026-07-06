@@ -7,11 +7,14 @@ import {
   createSession,
   createTestDb,
   createUser,
+  decryptJson,
+  getPluginInstance,
   listAudit,
   type Db,
 } from '@smokejumper/db'
-import { createBuiltinRegistry } from '@smokejumper/plugin-host'
+import { createBuiltinRegistry, createRegistry, type PluginRegistry } from '@smokejumper/plugin-host'
 import type { FastifyInstance } from 'fastify'
+import { z } from 'zod'
 import { buildServer, createBus } from '../src/index.ts'
 
 const TEST_KEY = Buffer.alloc(32, 7).toString('base64')
@@ -25,7 +28,7 @@ interface Ctx {
   member: { sj_session: string }
 }
 
-async function setup(): Promise<Ctx> {
+async function setup(registry?: PluginRegistry): Promise<Ctx> {
   const db = await createTestDb()
   const org = await createOrganization(db, { name: 'Acme', slug: 'acme' })
   const project = await createProject(db, { orgId: org.id, name: 'Demo', slug: 'demo' })
@@ -33,7 +36,12 @@ async function setup(): Promise<Ctx> {
   const memberUser = await createUser(db, { email: 'member@example.com', password: 'smokejumper', name: 'Member' })
   await addMember(db, { orgId: org.id, userId: ownerUser.id, role: 'owner' })
   await addMember(db, { orgId: org.id, userId: memberUser.id, role: 'member' })
-  const app = await buildServer({ db, encryptionKey: TEST_KEY, bus: createBus(), registry: createBuiltinRegistry() })
+  const app = await buildServer({
+    db,
+    encryptionKey: TEST_KEY,
+    bus: createBus(),
+    registry: registry ?? createBuiltinRegistry(),
+  })
   return {
     db,
     app,
@@ -42,6 +50,32 @@ async function setup(): Promise<Ctx> {
     owner: { sj_session: (await createSession(db, ownerUser.id)).token },
     member: { sj_session: (await createSession(db, memberUser.id)).token },
   }
+}
+
+function multiSecretRegistry(): PluginRegistry {
+  const registry = createRegistry()
+  registry.register({
+    manifest: {
+      id: 'multi-secret',
+      name: 'Multi Secret',
+      version: '0.1.0',
+      sdkVersion: '0.2.0',
+      kind: 'telemetry-source' as const,
+      description: 'test-only source with two optional secrets',
+      configSchema: z.object({}),
+      credentialSchema: z.object({
+        keyA: z.string().min(1).optional(),
+        keyB: z.string().min(1).optional(),
+      }),
+    },
+    async healthCheck() {
+      return { ok: true }
+    },
+    tools() {
+      return []
+    },
+  })
+  return registry
 }
 
 describe('plugin instance CRUD', () => {
@@ -222,5 +256,95 @@ describe('plugin instance CRUD', () => {
         })
       ).statusCode,
     ).toBe(404)
+  })
+})
+
+describe('credential merge on PATCH', () => {
+  it('merges patched credential keys over stored ones instead of wiping the rest', async () => {
+    const ctx = await setup(multiSecretRegistry())
+    const created = (
+      await ctx.app.inject({
+        method: 'POST',
+        url: `/api/projects/${ctx.projectId}/instances`,
+        cookies: ctx.owner,
+        payload: {
+          pluginId: 'multi-secret',
+          name: 'Multi',
+          config: {},
+          credentials: { keyA: 'a1', keyB: 'b1' },
+        },
+      })
+    ).json()
+
+    const patched = await ctx.app.inject({
+      method: 'PATCH',
+      url: `/api/instances/${created.id}`,
+      cookies: ctx.owner,
+      payload: { credentials: { keyA: 'a2' } },
+    })
+    expect(patched.statusCode).toBe(200)
+
+    const instance = await getPluginInstance(ctx.db, created.id)
+    const stored = decryptJson(instance!.credentialsEncrypted!, TEST_KEY)
+    expect(stored).toEqual({ keyA: 'a2', keyB: 'b1' })
+  })
+
+  it('rejects a merged credentials object that fails schema validation, leaving storage unchanged', async () => {
+    const ctx = await setup(multiSecretRegistry())
+    const created = (
+      await ctx.app.inject({
+        method: 'POST',
+        url: `/api/projects/${ctx.projectId}/instances`,
+        cookies: ctx.owner,
+        payload: {
+          pluginId: 'multi-secret',
+          name: 'Multi',
+          config: {},
+          credentials: { keyA: 'a1', keyB: 'b1' },
+        },
+      })
+    ).json()
+
+    const patched = await ctx.app.inject({
+      method: 'PATCH',
+      url: `/api/instances/${created.id}`,
+      cookies: ctx.owner,
+      payload: { credentials: { keyA: 123 } },
+    })
+    expect(patched.statusCode).toBe(400)
+    expect(patched.json()).toEqual({ error: 'invalid credentials' })
+
+    const instance = await getPluginInstance(ctx.db, created.id)
+    const stored = decryptJson(instance!.credentialsEncrypted!, TEST_KEY)
+    expect(stored).toEqual({ keyA: 'a1', keyB: 'b1' })
+  })
+
+  it('replaces every stored key when the patch supplies all of them', async () => {
+    const ctx = await setup(multiSecretRegistry())
+    const created = (
+      await ctx.app.inject({
+        method: 'POST',
+        url: `/api/projects/${ctx.projectId}/instances`,
+        cookies: ctx.owner,
+        payload: {
+          pluginId: 'multi-secret',
+          name: 'Multi',
+          config: {},
+          credentials: { keyA: 'a1', keyB: 'b1' },
+        },
+      })
+    ).json()
+
+    const patched = await ctx.app.inject({
+      method: 'PATCH',
+      url: `/api/instances/${created.id}`,
+      cookies: ctx.owner,
+      payload: { credentials: { keyA: 'x', keyB: 'y' } },
+    })
+    expect(patched.statusCode).toBe(200)
+
+    const instance = await getPluginInstance(ctx.db, created.id)
+    const stored = decryptJson(instance!.credentialsEncrypted!, TEST_KEY)
+    expect(stored).toEqual({ keyA: 'x', keyB: 'y' })
   })
 })
