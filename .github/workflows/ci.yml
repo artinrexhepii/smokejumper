@@ -63,6 +63,8 @@ jobs:
         run: |
           kind load docker-image smokejumper-server:ci --name smokejumper
           kind load docker-image smokejumper-dashboard:ci --name smokejumper
+          docker pull pgvector/pgvector:pg17
+          kind load docker-image pgvector/pgvector:pg17 --name smokejumper
       - name: chart lint and snapshot
         run: bash deploy/helm/smokejumper/tests/snapshot.sh
       - name: generate encryption key
