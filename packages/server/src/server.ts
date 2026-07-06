@@ -12,7 +12,13 @@ import {
 } from '@smokejumper/db'
 import Fastify, { type FastifyInstance } from 'fastify'
 import { z } from 'zod'
-import type { Embedder } from '@smokejumper/engine'
+import {
+  createAnthropicDriver,
+  createFakeDriver,
+  resolveEngineConfig,
+  type Embedder,
+  type ModelDriver,
+} from '@smokejumper/engine'
 import type { PluginRegistry } from '@smokejumper/plugin-host'
 import type { IncidentBus } from './bus.ts'
 import { createIncidentManager } from './incident-manager.ts'
@@ -23,6 +29,7 @@ import { registerAuthRoutes } from './routes/auth-oidc.ts'
 import { registerIngestRoutes } from './routes/ingest.ts'
 import { registerInstanceRoutes } from './routes/instances.ts'
 import { registerPluginCatalogRoute } from './routes/plugins.ts'
+import { registerReviewRoutes } from './routes/reviews.ts'
 import { registerRunbookRoutes } from './routes/runbooks.ts'
 import { registerSseRoute } from './sse.ts'
 
@@ -35,6 +42,7 @@ export interface ServerDeps {
   oidc?: OidcProvider
   embedder?: Embedder
   fetchImpl?: typeof fetch
+  reviewDriver?: ModelDriver
 }
 
 declare module 'fastify' {
@@ -57,6 +65,11 @@ const loginBody = z.object({ email: z.string(), password: z.string() })
 
 function toPublicUser(user: User): { id: string; email: string; name: string } {
   return { id: user.id, email: user.email, name: user.name }
+}
+
+function createEngineDriver(): ModelDriver {
+  const config = resolveEngineConfig({})
+  return config.models === 'fake' ? createFakeDriver() : createAnthropicDriver(config.models)
 }
 
 export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
@@ -124,6 +137,9 @@ export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
   registerSseRoute(app, deps)
   registerRunbookRoutes(app, { db: deps.db, embedder: deps.embedder, fetchImpl: deps.fetchImpl })
 
+  const engineDriver = deps.reviewDriver ?? createEngineDriver()
+  registerReviewRoutes(app, { db: deps.db, driver: engineDriver })
+
   if (deps.registry) {
     registerPluginCatalogRoute(app, { registry: deps.registry })
     registerInstanceRoutes(app, {
@@ -131,7 +147,7 @@ export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
       encryptionKey: deps.encryptionKey,
       registry: deps.registry,
     })
-    const incidentManager = createIncidentManager({ db: deps.db, bus: deps.bus })
+    const incidentManager = createIncidentManager({ db: deps.db, bus: deps.bus, driver: engineDriver })
     await registerIngestRoutes(app, {
       db: deps.db,
       encryptionKey: deps.encryptionKey,
