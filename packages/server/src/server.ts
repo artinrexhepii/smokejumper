@@ -12,6 +12,7 @@ import {
 } from '@smokejumper/db'
 import Fastify, { type FastifyInstance } from 'fastify'
 import { z } from 'zod'
+import type { Embedder } from '@smokejumper/engine'
 import type { PluginRegistry } from '@smokejumper/plugin-host'
 import type { IncidentBus } from './bus.ts'
 import { createIncidentManager } from './incident-manager.ts'
@@ -22,6 +23,7 @@ import { registerAuthRoutes } from './routes/auth-oidc.ts'
 import { registerIngestRoutes } from './routes/ingest.ts'
 import { registerInstanceRoutes } from './routes/instances.ts'
 import { registerPluginCatalogRoute } from './routes/plugins.ts'
+import { registerRunbookRoutes } from './routes/runbooks.ts'
 import { registerSseRoute } from './sse.ts'
 
 export interface ServerDeps {
@@ -31,6 +33,8 @@ export interface ServerDeps {
   registry?: PluginRegistry
   investigator?: InvestigatorLike
   oidc?: OidcProvider
+  embedder?: Embedder
+  fetchImpl?: typeof fetch
 }
 
 declare module 'fastify' {
@@ -118,6 +122,7 @@ export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
   registerDataRoutes(app, deps)
   registerAuthRoutes(app, deps)
   registerSseRoute(app, deps)
+  registerRunbookRoutes(app, { db: deps.db, embedder: deps.embedder, fetchImpl: deps.fetchImpl })
 
   if (deps.registry) {
     registerPluginCatalogRoute(app, { registry: deps.registry })
