@@ -77,8 +77,8 @@ export function PluginInstanceForm({
       const value = coerceConfigValue(field, configValues[field.key] ?? '')
       if (value !== undefined) config[field.key] = value
     }
-    // Server credentials are re-encrypted wholesale when provided, so only include keys the
-    // user actually typed; omit `credentials` entirely on update to leave stored ones intact.
+    // The server merges provided credential keys over the stored ones, so send only keys the
+    // user actually typed; untouched secrets are preserved either way.
     const credentials: Record<string, unknown> = {}
     for (const field of descriptor.credentials) {
       const draft = secretDrafts[field.key]?.trim() ?? ''
