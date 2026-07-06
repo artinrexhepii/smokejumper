@@ -148,6 +148,9 @@ importers:
       '@smokejumper/plugin-loki':
         specifier: workspace:*
         version: link:../../plugins/loki
+      '@smokejumper/plugin-pagerduty':
+        specifier: workspace:*
+        version: link:../../plugins/pagerduty
       '@smokejumper/plugin-prometheus':
         specifier: workspace:*
         version: link:../../plugins/prometheus

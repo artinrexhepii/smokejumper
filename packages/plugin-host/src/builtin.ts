@@ -6,6 +6,7 @@ import { createGithubDeploysTelemetrySource } from '@smokejumper/plugin-github-d
 import { createHttpTelemetrySource } from '@smokejumper/plugin-http'
 import { createKubernetesTelemetrySource } from '@smokejumper/plugin-kubernetes'
 import { createLokiTelemetrySource } from '@smokejumper/plugin-loki'
+import { createPagerdutyAlertSource, createPagerdutyNotificationSink } from '@smokejumper/plugin-pagerduty'
 import { createPrometheusTelemetrySource } from '@smokejumper/plugin-prometheus'
 import { createSentryAlertSource } from '@smokejumper/plugin-sentry'
 import { createSlackNotificationSink } from '@smokejumper/plugin-slack'
@@ -26,5 +27,7 @@ export function createBuiltinRegistry(): PluginRegistry {
   registry.register(createLokiTelemetrySource())
   registry.register(createPrometheusTelemetrySource())
   registry.register(createDatadogTelemetrySource())
+  registry.register(createPagerdutyAlertSource())
+  registry.register(createPagerdutyNotificationSink())
   return registry
 }

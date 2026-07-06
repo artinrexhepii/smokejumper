@@ -4,7 +4,7 @@ import * as host from '../src/index'
 import { createBuiltinRegistry } from '../src/builtin'
 
 describe('createBuiltinRegistry', () => {
-  it('registers all twelve first-party plugins under their pinned ids', () => {
+  it('registers all fourteen first-party plugins under their pinned ids', () => {
     const registry = createBuiltinRegistry()
     expect(registry.manifests().map((m) => m.id).sort()).toEqual([
       'alertmanager',
@@ -15,6 +15,8 @@ describe('createBuiltinRegistry', () => {
       'http',
       'kubernetes',
       'loki',
+      'pagerduty',
+      'pagerduty-notify',
       'prometheus',
       'sentry',
       'slack',
@@ -23,6 +25,7 @@ describe('createBuiltinRegistry', () => {
     expect(registry.alertSource('webhook')).toBeDefined()
     expect(registry.alertSource('sentry')).toBeDefined()
     expect(registry.alertSource('alertmanager')).toBeDefined()
+    expect(registry.alertSource('pagerduty')).toBeDefined()
     expect(registry.telemetrySource('docker')).toBeDefined()
     expect(registry.telemetrySource('http')).toBeDefined()
     expect(registry.telemetrySource('github-deploys')).toBeDefined()
@@ -32,8 +35,11 @@ describe('createBuiltinRegistry', () => {
     expect(registry.telemetrySource('loki')).toBeDefined()
     expect(registry.telemetrySource('datadog')).toBeDefined()
     expect(registry.notificationSink('slack')).toBeDefined()
+    expect(registry.notificationSink('pagerduty-notify')).toBeDefined()
     expect(registry.alertSource('docker')).toBeUndefined()
     expect(registry.telemetrySource('alertmanager')).toBeUndefined()
+    expect(registry.telemetrySource('pagerduty')).toBeUndefined()
+    expect(registry.notificationSink('pagerduty')).toBeUndefined()
   })
 
   it('produces a describeConfig-safe descriptor for every builtin manifest', () => {

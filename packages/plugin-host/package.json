@@ -17,6 +17,7 @@
     "@smokejumper/plugin-http": "workspace:*",
     "@smokejumper/plugin-kubernetes": "workspace:*",
     "@smokejumper/plugin-loki": "workspace:*",
+    "@smokejumper/plugin-pagerduty": "workspace:*",
     "@smokejumper/plugin-prometheus": "workspace:*",
     "@smokejumper/plugin-sdk": "workspace:*",
     "@smokejumper/plugin-sentry": "workspace:*",
