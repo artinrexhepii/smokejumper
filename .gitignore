@@ -2,5 +2,10 @@ node_modules/
 dist/
 *.log
 .env
+.env.*
+!.env.example
 .next/
 *.tsbuildinfo
+coverage/
+.DS_Store
+*.local
