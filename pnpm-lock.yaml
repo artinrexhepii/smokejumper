@@ -139,6 +139,9 @@ importers:
       '@smokejumper/plugin-github-deploys':
         specifier: workspace:*
         version: link:../../plugins/github-deploys
+      '@smokejumper/plugin-grafana':
+        specifier: workspace:*
+        version: link:../../plugins/grafana
       '@smokejumper/plugin-http':
         specifier: workspace:*
         version: link:../../plugins/http

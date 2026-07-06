@@ -3,6 +3,7 @@ import { createCloudwatchTelemetrySource } from '@smokejumper/plugin-cloudwatch'
 import { createDatadogTelemetrySource } from '@smokejumper/plugin-datadog'
 import { createDockerTelemetrySource } from '@smokejumper/plugin-docker'
 import { createGithubDeploysTelemetrySource } from '@smokejumper/plugin-github-deploys'
+import { createGrafanaTelemetrySource } from '@smokejumper/plugin-grafana'
 import { createHttpTelemetrySource } from '@smokejumper/plugin-http'
 import { createKubernetesTelemetrySource } from '@smokejumper/plugin-kubernetes'
 import { createLokiTelemetrySource } from '@smokejumper/plugin-loki'
@@ -29,5 +30,6 @@ export function createBuiltinRegistry(): PluginRegistry {
   registry.register(createDatadogTelemetrySource())
   registry.register(createPagerdutyAlertSource())
   registry.register(createPagerdutyNotificationSink())
+  registry.register(createGrafanaTelemetrySource())
   return registry
 }

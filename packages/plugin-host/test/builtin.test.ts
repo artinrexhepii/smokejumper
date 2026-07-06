@@ -4,7 +4,7 @@ import * as host from '../src/index'
 import { createBuiltinRegistry } from '../src/builtin'
 
 describe('createBuiltinRegistry', () => {
-  it('registers all fourteen first-party plugins under their pinned ids', () => {
+  it('registers all fifteen first-party plugins under their pinned ids', () => {
     const registry = createBuiltinRegistry()
     expect(registry.manifests().map((m) => m.id).sort()).toEqual([
       'alertmanager',
@@ -12,6 +12,7 @@ describe('createBuiltinRegistry', () => {
       'datadog',
       'docker',
       'github-deploys',
+      'grafana',
       'http',
       'kubernetes',
       'loki',
@@ -34,6 +35,7 @@ describe('createBuiltinRegistry', () => {
     expect(registry.telemetrySource('prometheus')).toBeDefined()
     expect(registry.telemetrySource('loki')).toBeDefined()
     expect(registry.telemetrySource('datadog')).toBeDefined()
+    expect(registry.telemetrySource('grafana')).toBeDefined()
     expect(registry.notificationSink('slack')).toBeDefined()
     expect(registry.notificationSink('pagerduty-notify')).toBeDefined()
     expect(registry.alertSource('docker')).toBeUndefined()

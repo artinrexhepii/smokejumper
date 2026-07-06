@@ -14,6 +14,7 @@
     "@smokejumper/plugin-datadog": "workspace:*",
     "@smokejumper/plugin-docker": "workspace:*",
     "@smokejumper/plugin-github-deploys": "workspace:*",
+    "@smokejumper/plugin-grafana": "workspace:*",
     "@smokejumper/plugin-http": "workspace:*",
     "@smokejumper/plugin-kubernetes": "workspace:*",
     "@smokejumper/plugin-loki": "workspace:*",
