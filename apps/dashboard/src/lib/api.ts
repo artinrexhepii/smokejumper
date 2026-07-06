@@ -250,6 +250,39 @@ export function checkInstanceHealth(id: string): Promise<{ ok: boolean; message?
   return apiFetch(`/api/instances/${id}/health`, { method: 'POST' })
 }
 
+export type RunbookSourceKind = 'upload' | 'paste' | 'url'
+
+export interface Runbook {
+  id: string
+  projectId: string
+  title: string
+  sourceKind: RunbookSourceKind
+  sourceRef: string | null
+  content: string
+  chunkCount: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateRunbookBody {
+  title: string
+  sourceKind: RunbookSourceKind
+  sourceRef?: string
+  content?: string
+}
+
+export function listRunbooks(projectId: string): Promise<Runbook[]> {
+  return apiFetch(`/api/projects/${projectId}/runbooks`)
+}
+
+export function createRunbook(projectId: string, body: CreateRunbookBody): Promise<Runbook> {
+  return apiFetch(`/api/projects/${projectId}/runbooks`, { method: 'POST', body: JSON.stringify(body) })
+}
+
+export function deleteRunbook(id: string): Promise<void> {
+  return apiFetch(`/api/runbooks/${id}`, { method: 'DELETE' })
+}
+
 export interface AuthConfig {
   password: boolean
   oidc: { enabled: boolean; buttonLabel: string }

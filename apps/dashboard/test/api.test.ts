@@ -3,12 +3,15 @@ import {
   ApiError,
   checkInstanceHealth,
   createInstance,
+  createRunbook,
   deleteInstance,
+  deleteRunbook,
   getIncident,
   listIncidents,
   listInstances,
   listPlugins,
   listProjects,
+  listRunbooks,
   login,
   logout,
   me,
@@ -167,6 +170,34 @@ describe('api client', () => {
     expect(url).toBe('http://localhost:3400/api/instances/inst-1/health')
     expect(init.method).toBe('POST')
     expect(result).toEqual({ ok: true })
+  })
+
+  it('lists runbooks for a project', async () => {
+    const impl = stubFetch(200, [])
+    await listRunbooks('proj-1')
+    const [url] = impl.mock.calls[0]! as unknown as [string]
+    expect(url).toBe('http://localhost:3400/api/projects/proj-1/runbooks')
+  })
+
+  it('creates a pasted runbook', async () => {
+    const impl = stubFetch(201, { id: 'rb-1' })
+    await createRunbook('proj-1', { title: 'Restart guide', sourceKind: 'paste', content: 'do the thing' })
+    const [url, init] = impl.mock.calls[0]! as unknown as [string, RequestInit]
+    expect(url).toBe('http://localhost:3400/api/projects/proj-1/runbooks')
+    expect(init.method).toBe('POST')
+    expect(JSON.parse(init.body as string)).toEqual({
+      title: 'Restart guide',
+      sourceKind: 'paste',
+      content: 'do the thing',
+    })
+  })
+
+  it('deletes a runbook', async () => {
+    const impl = stubFetch(204)
+    await expect(deleteRunbook('rb-1')).resolves.toBeUndefined()
+    const [url, init] = impl.mock.calls[0]! as unknown as [string, RequestInit]
+    expect(url).toBe('http://localhost:3400/api/runbooks/rb-1')
+    expect(init.method).toBe('DELETE')
   })
 
   it('resolves session info including each org role', async () => {

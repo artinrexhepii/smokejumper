@@ -27,9 +27,14 @@ export function NavBar() {
       {pathname === '/login' ? null : (
         <nav className="nav-links">
           {showSettings ? (
-            <Link href="/settings/plugins" className="btn btn-ghost">
-              settings
-            </Link>
+            <>
+              <Link href="/settings/plugins" className="btn btn-ghost">
+                settings
+              </Link>
+              <Link href="/settings/runbooks" className="btn btn-ghost">
+                runbooks
+              </Link>
+            </>
           ) : null}
           <button type="button" className="btn btn-ghost" onClick={onLogout}>
             log out
