@@ -1,0 +1,14 @@
+Smokejumper {{ .Chart.AppVersion }} is installing into namespace {{ .Release.Namespace }}.
+
+Server service:    {{ include "smokejumper.fullname" . }}-server:{{ .Values.service.server.port }}
+Dashboard service: {{ include "smokejumper.fullname" . }}-dashboard:{{ .Values.service.dashboard.port }}
+
+The migration/seed Job creates the initial org/user/project (admin@example.com / smokejumper).
+
+Reach the dashboard locally:
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "smokejumper.fullname" . }}-dashboard {{ .Values.service.dashboard.port }}:{{ .Values.service.dashboard.port }}
+
+{{- if not .Values.oidc.enabled }}
+
+OIDC is disabled: the server is password-only. Set oidc.enabled=true with oidc.issuer/clientId/clientSecret/defaultOrg to add SSO.
+{{- end }}

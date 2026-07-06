@@ -1,0 +1,74 @@
+nameOverride: ""
+fullnameOverride: ""
+
+replicaCount: 1
+
+image:
+  server:
+    repository: smokejumper-server
+    tag: latest
+  dashboard:
+    repository: smokejumper-dashboard
+    tag: latest
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+serviceAccount:
+  name: ""
+
+rbac:
+  create: true
+
+postgres:
+  enabled: true
+  image: pgvector/pgvector:pg17
+  storage: 8Gi
+  database: smokejumper
+  username: smokejumper
+  password: smokejumper
+  resources: {}
+
+externalDatabase:
+  url: ""
+
+encryptionKey: ""
+existingSecret: ""
+
+anthropicApiKey: ""
+fakeModel: false
+secureCookies: false
+
+publicBaseUrl: http://localhost:3400
+dashboardUrl: http://localhost:3000
+dashboardOrigin: http://localhost:3000
+
+oidc:
+  enabled: false
+  issuer: ""
+  clientId: ""
+  clientSecret: ""
+  defaultOrg: ""
+  defaultRole: member
+  scopes: openid email profile
+  buttonLabel: Sign in with SSO
+  redirectUri: ""
+
+ingress:
+  enabled: false
+  className: ""
+  host: smokejumper.local
+  annotations: {}
+  tls: false
+  tlsSecretName: ""
+
+service:
+  server:
+    port: 3400
+  dashboard:
+    port: 3000
+
+seed:
+  enabled: true
+
+resources: {}
