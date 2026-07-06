@@ -52,7 +52,7 @@ describe('flattenLokiStreams', () => {
 
 describe('loki telemetry source', () => {
   it('passes conformance', async () => {
-    const result = await checkTelemetrySource(source, createTestContext<LokiConfig>(baseConfig))
+    const result = await checkTelemetrySource(source, { ...createTestContext<LokiConfig>(baseConfig), fetch: fakeLokiFetch({}) })
     expect(result.failures).toEqual([])
     expect(result.pass).toBe(true)
   })
