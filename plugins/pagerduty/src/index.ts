@@ -1,6 +1,13 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import { z } from 'zod'
-import type { AlertSource, NormalizedAlert, Severity } from '@smokejumper/plugin-sdk'
+import type {
+  AlertSource,
+  IncidentEvent,
+  IncidentEventType,
+  NormalizedAlert,
+  NotificationSink,
+  Severity,
+} from '@smokejumper/plugin-sdk'
 
 export const pagerdutyAlertConfigSchema = z.object({})
 
@@ -122,6 +129,94 @@ export function createPagerdutyAlertSource(): AlertSource<PagerdutyAlertConfig> 
       const body = pagerdutyWebhookPayloadSchema.parse(payload)
       if (!TRIGGERING_EVENT_TYPES.has(body.event.event_type)) return []
       return toNormalizedAlert(body.event)
+    },
+  }
+}
+
+export const pagerdutyNotifyConfigSchema = z.object({})
+
+export const pagerdutyNotifyCredentialSchema = z.object({
+  routingKey: z.string().min(1),
+})
+
+export type PagerdutyNotifyConfig = z.infer<typeof pagerdutyNotifyConfigSchema> & z.infer<typeof pagerdutyNotifyCredentialSchema>
+
+function eventAction(type: IncidentEventType): 'trigger' | 'resolve' {
+  return type === 'incident.resolved' ? 'resolve' : 'trigger'
+}
+
+function eventSeverity(event: IncidentEvent): 'critical' | 'error' | 'warning' | 'info' {
+  const raw = typeof event.payload.severity === 'string' ? event.payload.severity.toLowerCase() : ''
+  switch (raw) {
+    case 'critical':
+      return 'critical'
+    case 'high':
+      return 'error'
+    case 'medium':
+      return 'warning'
+    case 'low':
+    case 'info':
+      return 'info'
+    default:
+      return 'warning'
+  }
+}
+
+interface PagerdutyEnqueueResponse {
+  status: string
+  message?: string
+  dedup_key?: string
+  errors?: string[]
+}
+
+export function createPagerdutyNotificationSink(): NotificationSink<PagerdutyNotifyConfig> {
+  return {
+    manifest: {
+      id: 'pagerduty-notify',
+      name: 'PagerDuty',
+      version: '0.1.0',
+      sdkVersion: '0.2.0',
+      kind: 'notification-sink',
+      description: 'Triggers and resolves PagerDuty incidents via the Events API v2',
+      configSchema: pagerdutyNotifyConfigSchema,
+      credentialSchema: pagerdutyNotifyCredentialSchema,
+    },
+    async notify(event, rendering, ctx) {
+      try {
+        const action = eventAction(event.type)
+        const body: Record<string, unknown> = {
+          routing_key: ctx.config.routingKey,
+          event_action: action,
+          dedup_key: event.incidentId,
+        }
+        if (action === 'trigger') {
+          body.client = 'Smokejumper'
+          if (rendering.url) body.client_url = rendering.url
+          body.payload = {
+            summary: rendering.title,
+            source: 'smokejumper',
+            severity: eventSeverity(event),
+            timestamp: event.occurredAt,
+            custom_details: { markdown: rendering.markdown },
+          }
+        }
+        const res = await ctx.fetch('https://events.pagerduty.com/v2/enqueue', {
+          method: 'POST',
+          signal: ctx.signal,
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(body),
+        })
+        const responseBody = (await res.json()) as PagerdutyEnqueueResponse
+        if (responseBody.status !== 'success') {
+          return {
+            delivered: false,
+            error: responseBody.errors?.join('; ') ?? responseBody.message ?? `pagerduty returned http ${res.status}`,
+          }
+        }
+        return { delivered: true, externalId: responseBody.dedup_key }
+      } catch (err) {
+        return { delivered: false, error: err instanceof Error ? err.message : String(err) }
+      }
     },
   }
 }
