@@ -596,3 +596,9 @@ details > summary {
   font-size: 0.85rem;
   margin: 0.5rem 0 1rem;
 }
+
+.install-note {
+  color: var(--ok);
+  font-size: 0.9rem;
+  margin: 0.5rem 0 1rem;
+}

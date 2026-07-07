@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   getRegistry,
   getRegistryPolicy,
@@ -36,6 +36,9 @@ export default function MarketplacePage() {
   const [view, setView] = useState<View>({ type: 'catalog' })
   const [installingKey, setInstallingKey] = useState<string | null>(null)
   const [installMessage, setInstallMessage] = useState<string | null>(null)
+  const mounted = useRef(true)
+
+  useEffect(() => () => { mounted.current = false }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -62,13 +65,16 @@ export default function MarketplacePage() {
     setInstallingKey(key)
     setInstallMessage(null)
     try {
-      await installPlugin(entry.id, version)
-      setInstallMessage(`${entry.name} ${version} queued for install — restart the server to apply.`)
+      const { restartRequired } = await installPlugin(entry.id, version)
+      if (!mounted.current) return
+      if (restartRequired) {
+        setInstallMessage(`${entry.name} ${version} queued for install — restart the server to apply.`)
+      }
       setReloadToken((t) => t + 1)
     } catch {
-      setListError('Could not install the plugin — try again.')
+      if (mounted.current) setListError('Could not install the plugin — try again.')
     } finally {
-      setInstallingKey(null)
+      if (mounted.current) setInstallingKey(null)
     }
   }
 
@@ -112,7 +118,7 @@ export default function MarketplacePage() {
         server&rsquo;s privileges; only install plugins you trust.
       </p>
       {listError ? <p className="error-text">{listError}</p> : null}
-      {installMessage ? <p className="empty">{installMessage}</p> : null}
+      {installMessage ? <p className="install-note">{installMessage}</p> : null}
       {view.type === 'detail' && selected ? (
         <div className="card registry-detail">
           <button type="button" className="btn btn-ghost" onClick={() => setView({ type: 'catalog' })}>

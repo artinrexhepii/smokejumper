@@ -171,6 +171,19 @@ describe('MarketplacePage', () => {
     await waitFor(() => expect(screen.getByText(/queued for install/)).toBeTruthy())
   })
 
+  it('disables and relabels the install button for an already-installed version', async () => {
+    mockedMe.mockResolvedValue(ownerSession)
+    mockedGetRegistry.mockResolvedValue(upgradeFixture())
+    mockedGetPolicy.mockResolvedValue({ autoUpdate: false })
+    render(<MarketplacePage />)
+    await waitFor(() => expect(screen.getByText('Generic Webhook')).toBeTruthy())
+    fireEvent.click(screen.getAllByText('details')[0]!)
+    await waitFor(() => expect(screen.getByText('0.2.0')).toBeTruthy())
+    const installedButton = screen.getByRole('button', { name: 'installed' }) as HTMLButtonElement
+    expect(installedButton.disabled).toBe(true)
+    expect(screen.getByRole('button', { name: 'install' })).toBeTruthy()
+  })
+
   it('hides install controls for a member who cannot manage any org', async () => {
     mockedMe.mockResolvedValue(memberSession)
     mockedGetRegistry.mockResolvedValue(registryFixture())
