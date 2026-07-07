@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url'
 import { parseTrustKeys, type TrustKey } from './trust'
 
 export const FIRST_PARTY_KEY_ID = 'smokejumper-first-party-2026'
-export const FIRST_PARTY_PUBLIC_KEY_BASE64 = 'MCowBQYDK2VwAyEARGmKqIkM6G2hVnfgpad9Xwbglul1ay6VLwAHD+EMG3I='
+export const FIRST_PARTY_PUBLIC_KEY_BASE64 = 'MCowBQYDK2VwAyEAZRHmVz0R1gZs1pAli/oFiWRytBHsyxRHc8NOoTc7AM8='
 
 // Resolves relative to this file's own location — works unbundled (tsx/vitest,
 // where import.meta.url is packages/registry/src/first-party-key.ts) and
