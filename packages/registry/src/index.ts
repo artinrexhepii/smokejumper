@@ -1,3 +1,5 @@
+export * from './client'
 export * from './digest'
+export * from './first-party-key'
 export * from './schema'
 export * from './trust'
