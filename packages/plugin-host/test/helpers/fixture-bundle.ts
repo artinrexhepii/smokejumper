@@ -1,10 +1,36 @@
 import { generateKeyPairSync, sign, type KeyObject } from 'node:crypto'
+import { existsSync, readFileSync } from 'node:fs'
 import { mkdir, mkdtemp, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { computeBundleDigest, type TrustKey } from '@smokejumper/registry'
+
+// The generated index.mjs must import the SAME zod module instance the host
+// loaded (plugin-sdk imports 'zod' via its ESM "import" condition). If the
+// plugin loads zod's CJS build instead, its z.ZodType is a different class and
+// the host's `v instanceof z.ZodType` manifest check fails (dual-package
+// hazard). createRequire resolves the CJS entry, so we walk up to zod's
+// package.json and take its "import" (ESM) entry explicitly.
+function resolveZodEsmUrl(): string {
+  const require = createRequire(import.meta.url)
+  const cjsEntry = require.resolve('zod')
+  let dir = dirname(cjsEntry)
+  for (let i = 0; i < 6; i++) {
+    const pkgJson = join(dir, 'package.json')
+    if (existsSync(pkgJson)) {
+      const pkg = JSON.parse(readFileSync(pkgJson, 'utf8'))
+      if (pkg.name === 'zod') {
+        const esmEntry = pkg.exports?.['.']?.import ?? pkg.module ?? pkg.main
+        if (typeof esmEntry === 'string') return pathToFileURL(join(dir, esmEntry)).href
+        break
+      }
+    }
+    dir = dirname(dir)
+  }
+  return pathToFileURL(cjsEntry).href
+}
 
 export interface FixtureKeypair {
   keyId: string
@@ -43,10 +69,8 @@ export async function writeFixtureBundle(opts: WriteFixtureBundleOptions): Promi
   }
   // Resolved once, here, inside the repo's own module resolution chain, so the
   // generated index.mjs can later be dynamically imported from a temp directory
-  // that has no node_modules ancestry of its own. createRequire (not
-  // import.meta.resolve, which is not a function under vitest's SSR transform)
-  // gives a real absolute path we turn into a file:// URL to embed.
-  const zodUrl = pathToFileURL(createRequire(import.meta.url).resolve('zod')).href
+  // that has no node_modules ancestry of its own.
+  const zodUrl = resolveZodEsmUrl()
   const indexMjsSource = `import { z } from ${JSON.stringify(zodUrl)}
 
 export default function create() {
