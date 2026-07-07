@@ -1,6 +1,311 @@
 {
-  "generatedAt": "2026-07-06T00:00:00.000Z",
-  "entries": [],
-  "signature": "26cxsE5n0oidt+ga3uw35jVqQ9ymwIEaroMeNGzrxTOyvJCVwAB5lZs32gUhFw6dOXh4xMyOIuqrIcOLCPQOBw==",
+  "generatedAt": "2026-07-07T00:00:00.000Z",
+  "entries": [
+    {
+      "id": "webhook",
+      "name": "Generic Webhook",
+      "kind": "alert-source",
+      "description": "Ingests alerts from any system that can POST JSON with a shared token",
+      "repo": "https://github.com/artinrexhepi/smokejumper",
+      "verified": true,
+      "signals": {},
+      "versions": [
+        {
+          "version": "0.1.0",
+          "sdkVersion": "0.2.0",
+          "bundleUrl": "https://github.com/artinrexhepi/smokejumper/releases/download/plugin-webhook-v0.1.0/webhook-0.1.0.bundle.tar.gz",
+          "digest": "d1de981106f0f23a1f6dfe18bdef9f4d45238c602b7447f9d48075e3f35d9e0e",
+          "signature": "KcxyxxVssaLmxOy8uLgOPqZ/bd96xgwz2DC0a+lRgQFsjQdY7PYw0hTB2jKw22uN6P+T1Bmy57u4KR1SSbcDDQ==",
+          "signer": "smokejumper-fixture-2026"
+        }
+      ]
+    },
+    {
+      "id": "sentry",
+      "name": "Sentry",
+      "kind": "alert-source",
+      "description": "Ingests Sentry issue alert webhooks",
+      "repo": "https://github.com/artinrexhepi/smokejumper",
+      "verified": true,
+      "signals": {},
+      "versions": [
+        {
+          "version": "0.1.0",
+          "sdkVersion": "0.2.0",
+          "bundleUrl": "https://github.com/artinrexhepi/smokejumper/releases/download/plugin-sentry-v0.1.0/sentry-0.1.0.bundle.tar.gz",
+          "digest": "6d2719dcd7aac3d26bbec213ce1376c29605dde8fd8c9472e9c2a13a4967645b",
+          "signature": "J9O+KjZ7H9vOcqBIvszmq2rafDvSpqwagImsaePeGDHWTvkD3XNrLoqRAR+IzKtXYHSupQVkuhe/Q+7uZMCDBQ==",
+          "signer": "smokejumper-fixture-2026"
+        }
+      ]
+    },
+    {
+      "id": "docker",
+      "name": "Docker",
+      "kind": "telemetry-source",
+      "description": "Inspects containers, logs, and resource usage via the Docker Engine API",
+      "repo": "https://github.com/artinrexhepi/smokejumper",
+      "verified": true,
+      "signals": {},
+      "versions": [
+        {
+          "version": "0.1.0",
+          "sdkVersion": "0.2.0",
+          "bundleUrl": "https://github.com/artinrexhepi/smokejumper/releases/download/plugin-docker-v0.1.0/docker-0.1.0.bundle.tar.gz",
+          "digest": "073b2f84112cf6e1e52964116aa571d602a6c0d70e91adb41e886a688d94de0a",
+          "signature": "xzZyy9GQX/gZSp0vQYu8gp2lm5M3mShEvya109FUJSQA6KW6OnfeonVEDAbTYXgnQoMbljN6yzlO+2mMv07/Dw==",
+          "signer": "smokejumper-fixture-2026"
+        }
+      ]
+    },
+    {
+      "id": "http",
+      "name": "HTTP Check",
+      "kind": "telemetry-source",
+      "description": "Probes HTTP endpoints for status and latency",
+      "repo": "https://github.com/artinrexhepi/smokejumper",
+      "verified": true,
+      "signals": {},
+      "versions": [
+        {
+          "version": "0.1.0",
+          "sdkVersion": "0.2.0",
+          "bundleUrl": "https://github.com/artinrexhepi/smokejumper/releases/download/plugin-http-v0.1.0/http-0.1.0.bundle.tar.gz",
+          "digest": "ca3e365c205c69ecc494ee89404d934281151ff83b019c715c1ef49ed9b0d0a3",
+          "signature": "BVa3mVmIXaVJlrC+kXRLece2dxxVPCNZ+eNK39jRp8gsdLf1VwFQchNLmNlRrDV6ZPH2+jS480Xm/3Tz7Ei5Cg==",
+          "signer": "smokejumper-fixture-2026"
+        }
+      ]
+    },
+    {
+      "id": "github-deploys",
+      "name": "GitHub Deploys",
+      "kind": "telemetry-source",
+      "description": "Correlates incidents with recent GitHub deployments and commits",
+      "repo": "https://github.com/artinrexhepi/smokejumper",
+      "verified": true,
+      "signals": {},
+      "versions": [
+        {
+          "version": "0.1.0",
+          "sdkVersion": "0.2.0",
+          "bundleUrl": "https://github.com/artinrexhepi/smokejumper/releases/download/plugin-github-deploys-v0.1.0/github-deploys-0.1.0.bundle.tar.gz",
+          "digest": "3e49ebf426ee2980ea073f08b31018471da5759d25cbb6413df0bbae4db816a4",
+          "signature": "3iAubTQ7xOiB/NMXWdsmAmcCBzmGY1QSYz/StxAI8nqv3xE4NFLULY+60ddHdc+UNStvpqELB313R4K0wwvnCw==",
+          "signer": "smokejumper-fixture-2026"
+        }
+      ]
+    },
+    {
+      "id": "slack",
+      "name": "Slack",
+      "kind": "notification-sink",
+      "description": "Posts incident events to a Slack channel via chat.postMessage",
+      "repo": "https://github.com/artinrexhepi/smokejumper",
+      "verified": true,
+      "signals": {},
+      "versions": [
+        {
+          "version": "0.1.0",
+          "sdkVersion": "0.2.0",
+          "bundleUrl": "https://github.com/artinrexhepi/smokejumper/releases/download/plugin-slack-v0.1.0/slack-0.1.0.bundle.tar.gz",
+          "digest": "664b06315c4c999373bb4c355abd675bcecb372a54422f7be1e2d24dc64d7838",
+          "signature": "HBSjmMhPAIfsSHhlVu+MGJBNuN0FjTC5H5pj+yLUKEovaYMkorA7wpiddYCXgVItiFEb1aCn2vW+SZxeXE8hBQ==",
+          "signer": "smokejumper-fixture-2026"
+        }
+      ]
+    },
+    {
+      "id": "cloudwatch",
+      "name": "AWS CloudWatch",
+      "kind": "telemetry-source",
+      "description": "Reads CloudWatch alarms, metric statistics, and logs (Insights + filtered events)",
+      "repo": "https://github.com/artinrexhepi/smokejumper",
+      "verified": true,
+      "signals": {},
+      "versions": [
+        {
+          "version": "0.1.0",
+          "sdkVersion": "0.2.0",
+          "bundleUrl": "https://github.com/artinrexhepi/smokejumper/releases/download/plugin-cloudwatch-v0.1.0/cloudwatch-0.1.0.bundle.tar.gz",
+          "digest": "e5e527a49795e5c45db114ada17ad4c358b52cdb2588feed045f13286045b316",
+          "signature": "gE/6gbElD62/a9ItVDA72ANVbkD+iVUVkL6ridCp9xrusPzL/oEUIR93fHh7NDj2ntpqtD7RzYyivHE4EdFRAA==",
+          "signer": "smokejumper-fixture-2026"
+        }
+      ]
+    },
+    {
+      "id": "alertmanager",
+      "name": "Alertmanager",
+      "kind": "alert-source",
+      "description": "Ingests Prometheus Alertmanager webhook notifications",
+      "repo": "https://github.com/artinrexhepi/smokejumper",
+      "verified": true,
+      "signals": {},
+      "versions": [
+        {
+          "version": "0.1.0",
+          "sdkVersion": "0.2.0",
+          "bundleUrl": "https://github.com/artinrexhepi/smokejumper/releases/download/plugin-alertmanager-v0.1.0/alertmanager-0.1.0.bundle.tar.gz",
+          "digest": "e40c61660730aa4c1abd861efa334022c2e863a6a7951fe2a39b5ed45e329fd8",
+          "signature": "YkjitwrF6IZtaAbvVCAi3qY4/CJka1DeKCV9+K8FeBE2XtMiEEFxJsDZCoBNTwsASMeZ957LeFFe9tW64hl4Bw==",
+          "signer": "smokejumper-fixture-2026"
+        }
+      ]
+    },
+    {
+      "id": "loki",
+      "name": "Loki",
+      "kind": "telemetry-source",
+      "description": "Queries logs from a Grafana Loki server via LogQL",
+      "repo": "https://github.com/artinrexhepi/smokejumper",
+      "verified": true,
+      "signals": {},
+      "versions": [
+        {
+          "version": "0.1.0",
+          "sdkVersion": "0.2.0",
+          "bundleUrl": "https://github.com/artinrexhepi/smokejumper/releases/download/plugin-loki-v0.1.0/loki-0.1.0.bundle.tar.gz",
+          "digest": "d29d3eabc79ccf5a671b636e01f880f9c38dc97812e675b72404f474b6e8cd01",
+          "signature": "w6C9xpxiv8gN+gyUNSiCvaeXMeXGVwyuNE86DVfiLe8LZk/fyLNvVr2bVvkB4po0xDhldKe+4i6XjREA1BCvAw==",
+          "signer": "smokejumper-fixture-2026"
+        }
+      ]
+    },
+    {
+      "id": "prometheus",
+      "name": "Prometheus",
+      "kind": "telemetry-source",
+      "description": "Queries metrics, alerts, and scrape targets from a Prometheus server",
+      "repo": "https://github.com/artinrexhepi/smokejumper",
+      "verified": true,
+      "signals": {},
+      "versions": [
+        {
+          "version": "0.1.0",
+          "sdkVersion": "0.2.0",
+          "bundleUrl": "https://github.com/artinrexhepi/smokejumper/releases/download/plugin-prometheus-v0.1.0/prometheus-0.1.0.bundle.tar.gz",
+          "digest": "f9cb40290dd1284a7df1f659b672ee05416e33d6c8a85182457770478b7e93ec",
+          "signature": "mMBVMCj1waGSXZxalnigkVDiKlTL1vXqtjVdDIL4ZSOlowTFzr2EQ6iGyqKXdXaDxyBnctwZEQWj6d7Xee3IAQ==",
+          "signer": "smokejumper-fixture-2026"
+        }
+      ]
+    },
+    {
+      "id": "datadog",
+      "name": "Datadog",
+      "kind": "telemetry-source",
+      "description": "Queries Datadog metrics timeseries, log search, and monitors",
+      "repo": "https://github.com/artinrexhepi/smokejumper",
+      "verified": true,
+      "signals": {},
+      "versions": [
+        {
+          "version": "0.1.0",
+          "sdkVersion": "0.2.0",
+          "bundleUrl": "https://github.com/artinrexhepi/smokejumper/releases/download/plugin-datadog-v0.1.0/datadog-0.1.0.bundle.tar.gz",
+          "digest": "92f5621973a0624077a6e85cf6ad2cc72b9c9ecaf90b2ba625fc905be2fdabed",
+          "signature": "i0p9W9d1/BAxZrh4DlM9OUlpQ5kCnhNJCX/GoSE8A5bUmpD6mRhgSEm5LtkvCe2AXp7lhXPdymxojzKSG6X5Bw==",
+          "signer": "smokejumper-fixture-2026"
+        }
+      ]
+    },
+    {
+      "id": "pagerduty",
+      "name": "PagerDuty",
+      "kind": "alert-source",
+      "description": "Ingests PagerDuty Events API v2 webhooks and normalizes them with dedup keys",
+      "repo": "https://github.com/artinrexhepi/smokejumper",
+      "verified": true,
+      "signals": {},
+      "versions": [
+        {
+          "version": "0.1.0",
+          "sdkVersion": "0.2.0",
+          "bundleUrl": "https://github.com/artinrexhepi/smokejumper/releases/download/plugin-pagerduty-v0.1.0/pagerduty-0.1.0.bundle.tar.gz",
+          "digest": "d9ea3247ced2f1b84849bdfede86a090d3c47b230a409e5134c8755d37f8eb09",
+          "signature": "LP5Xf8lALc0Bsb4SnXpa+l3/gBOqUAOfwPWF60r9zqz+7TZ7G9SszDRyCLQvC4AHVTDVmmHFSFoOQ8DJd16yAw==",
+          "signer": "smokejumper-fixture-2026"
+        }
+      ]
+    },
+    {
+      "id": "pagerduty-notify",
+      "name": "PagerDuty Notify",
+      "kind": "notification-sink",
+      "description": "Posts an event or note to a PagerDuty incident via the PagerDuty API",
+      "repo": "https://github.com/artinrexhepi/smokejumper",
+      "verified": true,
+      "signals": {},
+      "versions": [
+        {
+          "version": "0.1.0",
+          "sdkVersion": "0.2.0",
+          "bundleUrl": "https://github.com/artinrexhepi/smokejumper/releases/download/plugin-pagerduty-v0.1.0/pagerduty-notify-0.1.0.bundle.tar.gz",
+          "digest": "7e084cf5e514b51ff1c95b3760f3c2f44d849a79f79d46e685bcd2413c8cb421",
+          "signature": "ublN7u5w26ResM/0TsnTTj1PEdRy+r3/LSWkZCUcrz3TRjaJU7I3H0TyVyKfteLPGQ4V5A22p+t8+1SFZ6b8DA==",
+          "signer": "smokejumper-fixture-2026"
+        }
+      ]
+    },
+    {
+      "id": "grafana",
+      "name": "Grafana",
+      "kind": "telemetry-source",
+      "description": "Queries Grafana datasource-proxy metrics and annotations via the Grafana HTTP API",
+      "repo": "https://github.com/artinrexhepi/smokejumper",
+      "verified": true,
+      "signals": {},
+      "versions": [
+        {
+          "version": "0.1.0",
+          "sdkVersion": "0.2.0",
+          "bundleUrl": "https://github.com/artinrexhepi/smokejumper/releases/download/plugin-grafana-v0.1.0/grafana-0.1.0.bundle.tar.gz",
+          "digest": "0c6ddf1cd7e2713adc754a1ca4624d39fd44a7c2646431958eca7e140880976e",
+          "signature": "/Y8bu0QgwOtwBMKqyMPHQAmCi8Mvus27EFn7sNXzy3gNpH2oDFIh1iCdEjhbqdXYCOOPbeusgibKsRL+MJpaDQ==",
+          "signer": "smokejumper-fixture-2026"
+        }
+      ]
+    },
+    {
+      "id": "elasticsearch",
+      "name": "Elasticsearch",
+      "kind": "telemetry-source",
+      "description": "Runs time-bounded _search queries over a log index pattern",
+      "repo": "https://github.com/artinrexhepi/smokejumper",
+      "verified": true,
+      "signals": {},
+      "versions": [
+        {
+          "version": "0.1.0",
+          "sdkVersion": "0.2.0",
+          "bundleUrl": "https://github.com/artinrexhepi/smokejumper/releases/download/plugin-elasticsearch-v0.1.0/elasticsearch-0.1.0.bundle.tar.gz",
+          "digest": "47223160030a6570b20bc5372163e81b5146bc4adec6eadf6275d9d349fa2b93",
+          "signature": "i0AfSoEmDlbNzS4JJWlFpS8F43wsLa/s8n6ZUNWgal2rPcGBp8oCghH3lZygpRMsLrXEGTy6hxrCWbMPxcVqAQ==",
+          "signer": "smokejumper-fixture-2026"
+        }
+      ]
+    },
+    {
+      "id": "kubernetes",
+      "name": "Kubernetes",
+      "kind": "telemetry-source",
+      "description": "Reads pods, logs, events, and deployments via the Kubernetes CoreV1/AppsV1 APIs",
+      "repo": "https://github.com/artinrexhepi/smokejumper",
+      "verified": true,
+      "signals": {},
+      "versions": [
+        {
+          "version": "0.1.0",
+          "sdkVersion": "0.2.0",
+          "bundleUrl": "https://github.com/artinrexhepi/smokejumper/releases/download/plugin-kubernetes-v0.1.0/kubernetes-0.1.0.bundle.tar.gz",
+          "digest": "b2fcf4f02ebeebee06195b175f06a396f40af2cf7161faa1b3da8cfe59f9d1de",
+          "signature": "QXUdSiICYsNJVgNY7GnY90ZBcfW4AQVVYmvZoj9R0kuY+r1bs4WImhSfeec59s1QuQLZ8/DaYf+jzl0tauROAQ==",
+          "signer": "smokejumper-fixture-2026"
+        }
+      ]
+    }
+  ],
+  "signature": "gxydUus6eBv7OI6VStwWdAJkxog+dloSEaocmZYLDixT11IO8MhRFEsfqG1EZj229p3uOBKOD0fSgUJJ7/AhAA==",
   "signer": "smokejumper-first-party-2026"
 }

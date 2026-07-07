@@ -99,7 +99,8 @@ describe('loadRegistryIndex', () => {
 
   it('loads and verifies the real committed first-party bundled index with the baked-in trust key', async () => {
     const loaded = await loadRegistryIndex({ bundledPath: FIRST_PARTY_INDEX_PATH, trustKeys: resolveTrustKeys(undefined) })
-    expect(loaded.entries).toEqual([])
+    expect(loaded.entries.length).toBeGreaterThan(0)
+    expect(loaded.entries.some((e) => e.id === 'webhook')).toBe(true)
   })
 })
 

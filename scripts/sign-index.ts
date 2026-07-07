@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync } from 'node:fs'
 import { pathToFileURL } from 'node:url'
 import { createPrivateKey, createPublicKey, sign as edSign, verify as edVerify, type KeyObject } from 'node:crypto'
 import { canonicalJson } from '@smokejumper/db'
-import type { RegistryIndex } from '@smokejumper/registry'
+import { FIRST_PARTY_KEY_ID, FIRST_PARTY_PUBLIC_KEY_BASE64, type RegistryIndex } from '@smokejumper/registry'
 
 // A trust key as carried in SMOKEJUMPER_PLUGIN_TRUST_KEYS: a keyId and the
 // SPKI-DER (base64) public key. This is deliberately NOT @smokejumper/registry's
@@ -93,10 +93,15 @@ if (isMain) {
   } else if (cmd === 'verify') {
     const [file] = args
     if (!file) throw new Error('usage: sign-index.ts verify <file>')
-    const trustKeysEnv = process.env.SMOKEJUMPER_PLUGIN_TRUST_KEYS
-    if (!trustKeysEnv) throw new Error('SMOKEJUMPER_PLUGIN_TRUST_KEYS is required to verify the index')
+    // Always trust the baked first-party key, so a green verify proves the index
+    // verifies on a stock server (whose resolveTrustKeys pins the same key with
+    // no operator config). Operator keys from the env are additive.
+    const trustKeys: TrustKey[] = [
+      { keyId: FIRST_PARTY_KEY_ID, publicKey: FIRST_PARTY_PUBLIC_KEY_BASE64 },
+      ...(process.env.SMOKEJUMPER_PLUGIN_TRUST_KEYS ? parseTrustKeys(process.env.SMOKEJUMPER_PLUGIN_TRUST_KEYS) : []),
+    ]
     const index = JSON.parse(readFileSync(file, 'utf8')) as RegistryIndex
-    const ok = verifyIndexSignature(index, parseTrustKeys(trustKeysEnv))
+    const ok = verifyIndexSignature(index, trustKeys)
     if (!ok) {
       console.error(`signature verification failed for ${file}`)
       process.exit(1)

@@ -127,24 +127,22 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: pnpm exec tsx scripts/build-registry-index.ts
-      - name: sign the registry index
+      - name: sign the registry index with the first-party key
         env:
           SMOKEJUMPER_REGISTRY_SIGNING_KEY: ${{ secrets.SMOKEJUMPER_REGISTRY_SIGNING_KEY }}
-          SMOKEJUMPER_REGISTRY_SIGNING_KEY_ID: smokejumper-firstparty
-        run: pnpm exec tsx scripts/sign-index.ts sign registry/index.unsigned.json registry/index.json
-      - name: verify the signed index round-trips
-        env:
-          SMOKEJUMPER_PLUGIN_TRUST_KEYS: ${{ vars.SMOKEJUMPER_PLUGIN_TRUST_KEYS }}
-        run: pnpm exec tsx scripts/sign-index.ts verify registry/index.json
+          SMOKEJUMPER_REGISTRY_SIGNING_KEY_ID: smokejumper-first-party-2026
+        run: pnpm exec tsx scripts/sign-index.ts sign registry/index.unsigned.json packages/registry/first-party-index.json
+      - name: verify the signed index against the baked trust key
+        run: pnpm exec tsx scripts/sign-index.ts verify packages/registry/first-party-index.json
       - name: publish the refreshed index on main
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
-          if git diff --quiet -- registry/index.json; then
-            echo "registry/index.json unchanged"
+          if git diff --quiet -- packages/registry/first-party-index.json; then
+            echo "first-party index unchanged"
           else
             git config user.name "smokejumper-ci"
             git config user.email "ci@smokejumper.invalid"
-            git add registry/index.json
+            git add packages/registry/first-party-index.json
             git commit -m "refresh signed registry index"
             git push
           fi

@@ -194,3 +194,16 @@ entries:
         digest: 47223160030a6570b20bc5372163e81b5146bc4adec6eadf6275d9d349fa2b93
         signature: i0AfSoEmDlbNzS4JJWlFpS8F43wsLa/s8n6ZUNWgal2rPcGBp8oCghH3lZygpRMsLrXEGTy6hxrCWbMPxcVqAQ==
         signer: smokejumper-fixture-2026
+  - id: kubernetes
+    name: Kubernetes
+    kind: telemetry-source
+    description: Reads pods, logs, events, and deployments via the Kubernetes CoreV1/AppsV1 APIs
+    repo: https://github.com/artinrexhepi/smokejumper
+    verified: true
+    versions:
+      - version: 0.1.0
+        sdkVersion: 0.2.0
+        bundleUrl: https://github.com/artinrexhepi/smokejumper/releases/download/plugin-kubernetes-v0.1.0/kubernetes-0.1.0.bundle.tar.gz
+        digest: b2fcf4f02ebeebee06195b175f06a396f40af2cf7161faa1b3da8cfe59f9d1de
+        signature: QXUdSiICYsNJVgNY7GnY90ZBcfW4AQVVYmvZoj9R0kuY+r1bs4WImhSfeec59s1QuQLZ8/DaYf+jzl0tauROAQ==
+        signer: smokejumper-fixture-2026
