@@ -7,6 +7,7 @@
     "plugins/*/test/**/*.ts",
     "plugins/*/test-integration/**/*.ts",
     "demo/src/**/*.ts",
-    "demo/test/**/*.ts"
+    "demo/test/**/*.ts",
+    "scripts/**/*.ts"
   ]
 }
