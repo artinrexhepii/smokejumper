@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import type { TourDef, TourPlacement, TourStep } from '../lib/tours'
 
 interface Rect {
@@ -14,6 +15,7 @@ const POP_W = 340
 const POP_H_EST = 210
 const GAP = 14
 const PAD = 16
+const RING = 6
 
 function findTarget(step: TourStep | undefined): HTMLElement | null {
   if (!step?.target) return null
@@ -24,8 +26,9 @@ function stepPresent(step: TourStep): boolean {
   return !step.target || findTarget(step) !== null
 }
 
-function rectOf(el: HTMLElement): Rect {
+function rectOf(el: HTMLElement): Rect | null {
   const r = el.getBoundingClientRect()
+  if (r.width === 0 && r.height === 0) return null
   return { top: r.top, left: r.left, width: r.width, height: r.height }
 }
 
@@ -35,10 +38,8 @@ function popStyle(rect: Rect | null, placement: TourPlacement = 'bottom'): React
   const vh = window.innerHeight
   let place = placement
 
-  // Flip vertically if there's no room.
   if (place === 'bottom' && rect.top + rect.height + GAP + POP_H_EST > vh) place = 'top'
   if (place === 'top' && rect.top - GAP - POP_H_EST < 0) place = 'bottom'
-  // Flip horizontally if there's no room.
   if (place === 'right' && rect.left + rect.width + GAP + POP_W > vw) place = 'left'
   if (place === 'left' && rect.left - GAP - POP_W < 0) place = 'right'
 
@@ -64,9 +65,12 @@ function popStyle(rect: Rect | null, placement: TourPlacement = 'bottom'): React
 }
 
 export function Tour({ tour, onClose }: { tour: TourDef | null; onClose: (completed: boolean) => void }) {
+  const [mounted, setMounted] = useState(false)
   const [steps, setSteps] = useState<TourStep[]>([])
   const [index, setIndex] = useState(0)
   const [rect, setRect] = useState<Rect | null>(null)
+
+  useEffect(() => setMounted(true), [])
 
   // When a tour opens, snapshot the steps whose targets are actually on the page.
   useEffect(() => {
@@ -80,7 +84,7 @@ export function Tour({ tour, onClose }: { tour: TourDef | null; onClose: (comple
       setSteps(present)
       setIndex(0)
       if (present.length === 0) onClose(true)
-    }, 90)
+    }, 120)
     return () => clearTimeout(timer)
   }, [tour, onClose])
 
@@ -91,13 +95,18 @@ export function Tour({ tour, onClose }: { tour: TourDef | null; onClose: (comple
     setRect(el ? rectOf(el) : null)
   }, [step])
 
-  // Scroll the target into view and measure it on each step.
+  // Measure now, and only scroll if the target is off-screen.
   useEffect(() => {
     if (!step) return
     const el = findTarget(step)
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    if (el) {
+      const r = el.getBoundingClientRect()
+      const onScreen = r.top >= 8 && r.bottom <= window.innerHeight - 8
+      if (!onScreen) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+    measure()
     const raf = requestAnimationFrame(measure)
-    const settle = setTimeout(measure, 340)
+    const settle = setTimeout(measure, 360)
     return () => {
       cancelAnimationFrame(raf)
       clearTimeout(settle)
@@ -118,17 +127,15 @@ export function Tour({ tour, onClose }: { tour: TourDef | null; onClose: (comple
 
   const go = useCallback(
     (dir: 1 | -1) => {
-      setIndex((i) => {
-        const next = i + dir
-        if (next < 0) return i
-        if (next >= steps.length) {
-          onClose(true)
-          return i
-        }
-        return next
-      })
+      const next = index + dir
+      if (next < 0) return
+      if (next >= steps.length) {
+        onClose(true)
+        return
+      }
+      setIndex(next)
     },
-    [steps.length, onClose],
+    [index, steps.length, onClose],
   )
 
   useEffect(() => {
@@ -147,20 +154,42 @@ export function Tour({ tour, onClose }: { tour: TourDef | null; onClose: (comple
     return () => window.removeEventListener('keydown', onKey)
   }, [tour, go, onClose])
 
-  if (!tour || !step) return null
+  if (!tour || !step || !mounted) return null
 
   const isFirst = index === 0
   const isLast = index === steps.length - 1
 
-  return (
+  const overlay = (
     <div className="tour" role="dialog" aria-modal="true" aria-label={`${tour.label} walkthrough`}>
-      <div className={`tour-scrim${rect ? '' : ' is-dark'}`} />
       {rect ? (
-        <div
-          className="tour-spot"
-          style={{ top: rect.top - 6, left: rect.left - 6, width: rect.width + 12, height: rect.height + 12 }}
-        />
-      ) : null}
+        <>
+          {/* four dark panels around the target leave it fully visible and un-dimmed */}
+          <div className="tour-mask" style={{ top: 0, left: 0, width: '100vw', height: Math.max(0, rect.top - RING) }} />
+          <div
+            className="tour-mask"
+            style={{ top: rect.top - RING, left: 0, width: Math.max(0, rect.left - RING), height: rect.height + RING * 2 }}
+          />
+          <div
+            className="tour-mask"
+            style={{
+              top: rect.top - RING,
+              left: rect.left + rect.width + RING,
+              width: `calc(100vw - ${rect.left + rect.width + RING}px)`,
+              height: rect.height + RING * 2,
+            }}
+          />
+          <div
+            className="tour-mask"
+            style={{ top: rect.top + rect.height + RING, left: 0, width: '100vw', height: `calc(100vh - ${rect.top + rect.height + RING}px)` }}
+          />
+          <div
+            className="tour-ring"
+            style={{ top: rect.top - RING, left: rect.left - RING, width: rect.width + RING * 2, height: rect.height + RING * 2 }}
+          />
+        </>
+      ) : (
+        <div className="tour-scrim is-dark" />
+      )}
       <div className={`tour-pop${rect ? '' : ' tour-pop-center'}`} style={popStyle(rect, step.placement)}>
         <div className="tour-pop-top">
           <span className="tour-pop-count">
@@ -188,4 +217,6 @@ export function Tour({ tour, onClose }: { tour: TourDef | null; onClose: (comple
       </div>
     </div>
   )
+
+  return createPortal(overlay, document.body)
 }

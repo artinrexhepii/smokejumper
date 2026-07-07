@@ -1458,19 +1458,25 @@ details > summary {
   backdrop-filter: blur(2px);
 }
 
-.tour-spot {
+/* four dark panels box in the target; the gap between them stays clear so the
+   highlighted element shows at full brightness */
+.tour-mask {
+  position: fixed;
+  background: rgba(6, 4, 3, 0.72);
+}
+
+.tour-ring {
   position: fixed;
   border-radius: var(--radius-sm);
   box-shadow:
-    0 0 0 9999px rgba(6, 4, 3, 0.72),
-    0 0 0 1.5px var(--ember),
+    inset 0 0 0 1.5px var(--ember),
     0 0 26px 6px var(--ember-glow);
   pointer-events: none;
   transition:
-    top 0.28s cubic-bezier(0.4, 0, 0.2, 1),
-    left 0.28s cubic-bezier(0.4, 0, 0.2, 1),
-    width 0.28s cubic-bezier(0.4, 0, 0.2, 1),
-    height 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    top 0.24s cubic-bezier(0.4, 0, 0.2, 1),
+    left 0.24s cubic-bezier(0.4, 0, 0.2, 1),
+    width 0.24s cubic-bezier(0.4, 0, 0.2, 1),
+    height 0.24s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .tour-pop {
