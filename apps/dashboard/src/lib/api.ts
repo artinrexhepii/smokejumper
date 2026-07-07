@@ -329,6 +329,70 @@ export function deleteRunbook(id: string): Promise<void> {
   return apiFetch(`/api/runbooks/${id}`, { method: 'DELETE' })
 }
 
+export interface RegistrySignals {
+  stars?: number
+  downloads?: number
+  lastReleaseAt?: string
+  maintainer?: string
+}
+
+export interface RegistryVersionView {
+  version: string
+  sdkVersion: string
+  bundleUrl: string
+  digest: string
+  signature: string
+  signer: string
+}
+
+export interface RegistryEntryView {
+  id: string
+  name: string
+  kind: PluginKind
+  description: string
+  repo: string
+  verified: boolean
+  signals: RegistrySignals
+  versions: RegistryVersionView[]
+}
+
+export interface RegistryIndexView {
+  generatedAt: string
+  entries: RegistryEntryView[]
+  signature: string
+  signer: string
+}
+
+export interface InstalledPlugin {
+  id: string
+  version: string
+}
+
+export interface RegistryResponse {
+  index: RegistryIndexView
+  installed: InstalledPlugin[]
+}
+
+export interface RegistryPolicy {
+  autoUpdate: boolean
+}
+
+export interface InstallPluginResult {
+  restartRequired: true
+}
+
+export function getRegistry(): Promise<RegistryResponse> {
+  return apiFetch('/api/registry')
+}
+
+export function installPlugin(id: string, version: string): Promise<InstallPluginResult> {
+  return apiFetch('/api/registry/install', { method: 'POST', body: JSON.stringify({ id, version }) })
+}
+
+export function getRegistryPolicy(): Promise<RegistryPolicy> {
+  return apiFetch('/api/registry/policy')
+}
+
 export interface AuthConfig {
   password: boolean
   oidc: { enabled: boolean; buttonLabel: string }

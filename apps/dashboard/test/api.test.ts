@@ -9,7 +9,10 @@ import {
   deleteRunbook,
   generateReview,
   getIncident,
+  getRegistry,
+  getRegistryPolicy,
   getReview,
+  installPlugin,
   listIncidents,
   listInstances,
   listPlugins,
@@ -276,5 +279,40 @@ describe('api client', () => {
 
   it('builds the review export url', () => {
     expect(reviewExportUrl('inc-1')).toBe('http://localhost:3400/api/incidents/inc-1/review/export')
+  })
+
+  it('fetches the registry index and installed plugins', async () => {
+    const impl = stubFetch(200, {
+      index: {
+        generatedAt: '2026-07-06T00:00:00.000Z',
+        entries: [],
+        signature: 'sig',
+        signer: 'smokejumper-firstparty',
+      },
+      installed: [{ id: 'webhook', version: '0.1.0' }],
+    })
+    const result = await getRegistry()
+    expect((impl.mock.calls[0]! as unknown as [string, RequestInit])[0]).toBe('http://localhost:3400/api/registry')
+    expect(result.installed[0]!.id).toBe('webhook')
+    expect(result.index.signer).toBe('smokejumper-firstparty')
+  })
+
+  it('installs a plugin version', async () => {
+    const impl = stubFetch(202, { restartRequired: true })
+    const result = await installPlugin('webhook', '0.2.0')
+    const [url, init] = impl.mock.calls[0]! as unknown as [string, RequestInit]
+    expect(url).toBe('http://localhost:3400/api/registry/install')
+    expect(init.method).toBe('POST')
+    expect(JSON.parse(init.body as string)).toEqual({ id: 'webhook', version: '0.2.0' })
+    expect(result).toEqual({ restartRequired: true })
+  })
+
+  it('reads the registry auto-update policy', async () => {
+    const impl = stubFetch(200, { autoUpdate: false })
+    const policy = await getRegistryPolicy()
+    expect((impl.mock.calls[0]! as unknown as [string, RequestInit])[0]).toBe(
+      'http://localhost:3400/api/registry/policy',
+    )
+    expect(policy.autoUpdate).toBe(false)
   })
 })
