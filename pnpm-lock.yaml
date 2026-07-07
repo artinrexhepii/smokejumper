@@ -186,6 +186,25 @@ importers:
         specifier: ^3.25.0
         version: 3.25.76
 
+  packages/registry:
+    dependencies:
+      '@smokejumper/db':
+        specifier: workspace:*
+        version: link:../db
+      '@smokejumper/plugin-sdk':
+        specifier: workspace:*
+        version: link:../plugin-sdk
+      semver:
+        specifier: ^7.6.3
+        version: 7.8.5
+      zod:
+        specifier: ^3.25.0
+        version: 3.25.76
+    devDependencies:
+      '@types/semver':
+        specifier: ^7.5.8
+        version: 7.7.1
+
   packages/server:
     dependencies:
       '@fastify/cookie':
@@ -1488,6 +1507,9 @@ packages:
 
   '@types/react@19.2.17':
     resolution: {integrity: sha512-MXfmqaVPEVgkBT/aY0aGCkRWWtByiYQXo3xdQ8r5RzuFrPiRn8Gar2tQdXSUQ2GKV3bkXckek89V8wQBY2Q/Aw==}
+
+  '@types/semver@7.7.1':
+    resolution: {integrity: sha512-FmgJfu+MOcQ370SD0ev7EI8TlCAfKYU+B4m5T3yXc1CiRN94g/SZPtsCkk506aUDtlMnFZvasDwHHUcZUEaYuA==}
 
   '@types/stream-buffers@3.0.8':
     resolution: {integrity: sha512-J+7VaHKNvlNPJPEJXX/fKa9DZtR/xPMwuIbe+yNOwp1YB+ApUOBv2aUpEoBJEi8nJgbgs1x8e73ttg0r1rSUdw==}
@@ -4198,6 +4220,8 @@ snapshots:
   '@types/react@19.2.17':
     dependencies:
       csstype: 3.2.3
+
+  '@types/semver@7.7.1': {}
 
   '@types/stream-buffers@3.0.8':
     dependencies:

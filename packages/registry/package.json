@@ -1,0 +1,19 @@
+{
+  "name": "@smokejumper/registry",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@smokejumper/db": "workspace:*",
+    "@smokejumper/plugin-sdk": "workspace:*",
+    "semver": "^7.6.3",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/semver": "^7.5.8"
+  }
+}
