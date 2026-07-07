@@ -72,6 +72,22 @@ describe('resolveEngineConfig', () => {
     expect(config.models).toMatchObject({ provider: 'google' })
   })
 
+  it('lets SMOKEJUMPER_MODEL_PROVIDER override the key that is actually present', () => {
+    const config = resolveEngineConfig(
+      {},
+      { GEMINI_API_KEY: 'g', SMOKEJUMPER_MODEL_PROVIDER: 'anthropic' },
+    )
+    expect(config.models).toMatchObject({ provider: 'anthropic' })
+  })
+
+  it('ignores an unrecognized SMOKEJUMPER_MODEL_PROVIDER and detects from the key', () => {
+    const config = resolveEngineConfig(
+      {},
+      { GEMINI_API_KEY: 'g', SMOKEJUMPER_MODEL_PROVIDER: 'openai' },
+    )
+    expect(config.models).toMatchObject({ provider: 'google' })
+  })
+
   it('switches to the fake driver via SMOKEJUMPER_FAKE_MODEL=1', () => {
     expect(resolveEngineConfig({}, { SMOKEJUMPER_FAKE_MODEL: '1' }).models).toBe('fake')
   })

@@ -35,6 +35,12 @@ const DEFAULT_MODELS: Record<ModelProvider, Omit<EngineModels, 'provider'>> = {
 function detectProvider(env: Record<string, string | undefined>): ModelProvider {
   const explicit = env.SMOKEJUMPER_MODEL_PROVIDER?.trim().toLowerCase()
   if (explicit === 'anthropic' || explicit === 'google') return explicit
+  if (explicit) {
+    console.warn(
+      `smokejumper: ignoring unrecognized SMOKEJUMPER_MODEL_PROVIDER="${explicit}"; ` +
+        'detecting the provider from the configured API key instead.',
+    )
+  }
 
   const hasGemini = Boolean(
     env.GEMINI_API_KEY || env.GOOGLE_GENERATIVE_AI_API_KEY || env.GOOGLE_API_KEY,

@@ -163,6 +163,8 @@ function toMastraTools(tools: DriverTool[]) {
 }
 
 export function createModelDriver(models: EngineModels): ModelDriver {
+  // Mastra's Google provider reads GOOGLE_GENERATIVE_AI_API_KEY; bridge the
+  // GEMINI_API_KEY name operators actually paste. Process-env scoped by design.
   if (
     models.provider === 'google' &&
     process.env.GEMINI_API_KEY &&
