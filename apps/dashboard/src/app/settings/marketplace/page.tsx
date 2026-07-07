@@ -5,6 +5,7 @@ import {
   getRegistry,
   getRegistryPolicy,
   installPlugin,
+  listPlugins,
   type RegistryEntryView,
   type RegistryPolicy,
   type RegistryResponse,
@@ -29,6 +30,7 @@ export default function MarketplacePage() {
   const { session, loading, error } = useSession()
   const [registry, setRegistry] = useState<RegistryResponse | null>(null)
   const [policy, setPolicy] = useState<RegistryPolicy | null>(null)
+  const [builtinIds, setBuiltinIds] = useState<Set<string>>(new Set())
   const [listError, setListError] = useState<string | null>(null)
   const [reloadToken, setReloadToken] = useState(0)
   const [query, setQuery] = useState('')
@@ -42,11 +44,12 @@ export default function MarketplacePage() {
 
   useEffect(() => {
     let cancelled = false
-    Promise.all([getRegistry(), getRegistryPolicy()])
-      .then(([registryResponse, policyResponse]) => {
+    Promise.all([getRegistry(), getRegistryPolicy(), listPlugins().catch(() => [])])
+      .then(([registryResponse, policyResponse, plugins]) => {
         if (cancelled) return
         setRegistry(registryResponse)
         setPolicy(policyResponse)
+        setBuiltinIds(new Set(plugins.map((p) => p.manifest.id)))
         setListError(null)
       })
       .catch(() => {
@@ -151,7 +154,9 @@ export default function MarketplacePage() {
                 <li key={v.version} className="version-row">
                   <span>{v.version}</span>
                   <span className="instance-name">sdk {v.sdkVersion}</span>
-                  {canManage ? (
+                  {builtinIds.has(selected.id) ? (
+                    <span className="instance-name">built-in</span>
+                  ) : canManage ? (
                     <button
                       type="button"
                       className={`btn${isInstalled ? ' btn-active' : ''}`}
@@ -183,6 +188,7 @@ export default function MarketplacePage() {
                 </span>
                 {installedVersion ? <span className="badge">installed {installedVersion}</span> : null}
                 {hasUpgrade ? <span className="badge health-checking">upgrade available</span> : null}
+                {builtinIds.has(entry.id) ? <span className="badge">built-in</span> : null}
                 <button
                   type="button"
                   className="btn btn-ghost"

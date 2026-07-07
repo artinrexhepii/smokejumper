@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 
 vi.mock('next/navigation', () => ({
@@ -8,14 +8,27 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('../src/lib/api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../src/lib/api')>()
-  return { ...actual, me: vi.fn(), getRegistry: vi.fn(), getRegistryPolicy: vi.fn(), installPlugin: vi.fn() }
+  return { ...actual, me: vi.fn(), getRegistry: vi.fn(), getRegistryPolicy: vi.fn(), installPlugin: vi.fn(), listPlugins: vi.fn() }
 })
 
-import { getRegistry, getRegistryPolicy, installPlugin, me, type RegistryResponse } from '../src/lib/api'
+import {
+  getRegistry,
+  getRegistryPolicy,
+  installPlugin,
+  listPlugins,
+  me,
+  type PluginManifestInfo,
+  type RegistryResponse,
+} from '../src/lib/api'
 import MarketplacePage from '../src/app/settings/marketplace/page'
 
 const mockedMe = vi.mocked(me)
 const mockedGetRegistry = vi.mocked(getRegistry)
+const mockedListPlugins = vi.mocked(listPlugins)
+
+beforeEach(() => {
+  mockedListPlugins.mockResolvedValue([])
+})
 
 const ownerSession = {
   user: { id: 'u1', email: 'a@example.com', name: 'A' },
@@ -190,6 +203,31 @@ describe('MarketplacePage', () => {
     mockedGetPolicy.mockResolvedValue({ autoUpdate: false })
     render(<MarketplacePage />)
     await waitFor(() => expect(screen.getByText('Generic Webhook')).toBeTruthy())
+    fireEvent.click(screen.getAllByText('details')[0]!)
+    await waitFor(() => expect(screen.getByText('0.1.0')).toBeTruthy())
+    expect(screen.queryByRole('button', { name: 'install' })).toBeNull()
+  })
+
+  it('marks built-in plugins and does not offer to install them', async () => {
+    mockedMe.mockResolvedValue(ownerSession)
+    mockedGetRegistry.mockResolvedValue(registryFixture())
+    mockedGetPolicy.mockResolvedValue({ autoUpdate: false })
+    mockedListPlugins.mockResolvedValue([
+      {
+        manifest: {
+          id: 'webhook',
+          name: 'Generic Webhook',
+          version: '0.1.0',
+          kind: 'alert-source',
+          description: 'Ingests alerts',
+          sdkVersion: '0.2.0',
+        },
+        descriptor: { config: [], credentials: [] },
+      },
+    ] satisfies PluginManifestInfo[])
+    render(<MarketplacePage />)
+    await waitFor(() => expect(screen.getByText('Generic Webhook')).toBeTruthy())
+    expect(screen.getByText('built-in')).toBeTruthy()
     fireEvent.click(screen.getAllByText('details')[0]!)
     await waitFor(() => expect(screen.getByText('0.1.0')).toBeTruthy())
     expect(screen.queryByRole('button', { name: 'install' })).toBeNull()
