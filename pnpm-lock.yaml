@@ -11,6 +11,9 @@ importers:
       '@smokejumper/db':
         specifier: workspace:*
         version: link:packages/db
+      '@smokejumper/plugin-host':
+        specifier: workspace:*
+        version: link:packages/plugin-host
       '@smokejumper/plugin-sdk':
         specifier: workspace:*
         version: link:packages/plugin-sdk

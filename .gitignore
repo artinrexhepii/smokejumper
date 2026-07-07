@@ -10,3 +10,4 @@ coverage/
 .DS_Store
 *.local
 registry/index.unsigned.json
+.plugins-e2e-*

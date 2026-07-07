@@ -15,6 +15,7 @@
   },
   "devDependencies": {
     "@smokejumper/db": "workspace:*",
+    "@smokejumper/plugin-host": "workspace:*",
     "@smokejumper/plugin-sdk": "workspace:*",
     "@smokejumper/registry": "workspace:*",
     "@types/js-yaml": "^4.0.9",
