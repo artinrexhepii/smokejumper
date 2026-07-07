@@ -8,10 +8,10 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('../src/lib/api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../src/lib/api')>()
-  return { ...actual, me: vi.fn(), getRegistry: vi.fn() }
+  return { ...actual, me: vi.fn(), getRegistry: vi.fn(), getRegistryPolicy: vi.fn(), installPlugin: vi.fn() }
 })
 
-import { getRegistry, me, type RegistryResponse } from '../src/lib/api'
+import { getRegistry, getRegistryPolicy, installPlugin, me, type RegistryResponse } from '../src/lib/api'
 import MarketplacePage from '../src/app/settings/marketplace/page'
 
 const mockedMe = vi.mocked(me)
@@ -20,6 +20,11 @@ const mockedGetRegistry = vi.mocked(getRegistry)
 const ownerSession = {
   user: { id: 'u1', email: 'a@example.com', name: 'A' },
   orgs: [{ id: 'o1', name: 'Acme', slug: 'acme', role: 'owner' as const }],
+}
+
+const memberSession = {
+  user: { id: 'u2', email: 'b@example.com', name: 'B' },
+  orgs: [{ id: 'o1', name: 'Acme', slug: 'acme', role: 'member' as const }],
 }
 
 function registryFixture(): RegistryResponse {
@@ -73,6 +78,23 @@ function registryFixture(): RegistryResponse {
   }
 }
 
+function upgradeFixture(): RegistryResponse {
+  const base = registryFixture()
+  base.index.entries[0]!.versions.push({
+    version: '0.2.0',
+    sdkVersion: '0.2.0',
+    bundleUrl: 'https://example.com/webhook-0.2.0.tar.gz',
+    digest: 'e'.repeat(64),
+    signature: 's',
+    signer: 'k',
+  })
+  base.installed = [{ id: 'webhook', version: '0.1.0' }]
+  return base
+}
+
+const mockedGetPolicy = vi.mocked(getRegistryPolicy)
+const mockedInstall = vi.mocked(installPlugin)
+
 afterEach(() => {
   cleanup()
   vi.clearAllMocks()
@@ -117,5 +139,46 @@ describe('MarketplacePage', () => {
     fireEvent.click(screen.getAllByText('details')[0]!)
     await waitFor(() => expect(screen.getByText('0.1.0')).toBeTruthy())
     expect(screen.getByText(/Ingests alerts from any system/)).toBeTruthy()
+  })
+
+  it('reflects the auto-update policy read-only', async () => {
+    mockedMe.mockResolvedValue(ownerSession)
+    mockedGetRegistry.mockResolvedValue(registryFixture())
+    mockedGetPolicy.mockResolvedValue({ autoUpdate: true })
+    render(<MarketplacePage />)
+    await waitFor(() => expect(screen.getByText(/Auto-update: on/)).toBeTruthy())
+  })
+
+  it('shows an upgrade affordance when a newer version exists for an installed plugin', async () => {
+    mockedMe.mockResolvedValue(ownerSession)
+    mockedGetRegistry.mockResolvedValue(upgradeFixture())
+    mockedGetPolicy.mockResolvedValue({ autoUpdate: false })
+    render(<MarketplacePage />)
+    await waitFor(() => expect(screen.getByText('upgrade available')).toBeTruthy())
+  })
+
+  it('installs a version from the detail view and shows the restart-required message', async () => {
+    mockedMe.mockResolvedValue(ownerSession)
+    mockedGetRegistry.mockResolvedValue(upgradeFixture())
+    mockedGetPolicy.mockResolvedValue({ autoUpdate: false })
+    mockedInstall.mockResolvedValue({ restartRequired: true })
+    render(<MarketplacePage />)
+    await waitFor(() => expect(screen.getByText('Generic Webhook')).toBeTruthy())
+    fireEvent.click(screen.getAllByText('details')[0]!)
+    await waitFor(() => expect(screen.getByText('0.2.0')).toBeTruthy())
+    fireEvent.click(screen.getByRole('button', { name: 'install' }))
+    await waitFor(() => expect(mockedInstall).toHaveBeenCalledWith('webhook', '0.2.0'))
+    await waitFor(() => expect(screen.getByText(/queued for install/)).toBeTruthy())
+  })
+
+  it('hides install controls for a member who cannot manage any org', async () => {
+    mockedMe.mockResolvedValue(memberSession)
+    mockedGetRegistry.mockResolvedValue(registryFixture())
+    mockedGetPolicy.mockResolvedValue({ autoUpdate: false })
+    render(<MarketplacePage />)
+    await waitFor(() => expect(screen.getByText('Generic Webhook')).toBeTruthy())
+    fireEvent.click(screen.getAllByText('details')[0]!)
+    await waitFor(() => expect(screen.getByText('0.1.0')).toBeTruthy())
+    expect(screen.queryByRole('button', { name: 'install' })).toBeNull()
   })
 })

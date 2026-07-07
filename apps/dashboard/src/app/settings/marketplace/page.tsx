@@ -1,11 +1,18 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { getRegistry, type RegistryResponse } from '../../../lib/api'
-import { useSession } from '../../../lib/useSession'
+import {
+  getRegistry,
+  getRegistryPolicy,
+  installPlugin,
+  type RegistryEntryView,
+  type RegistryPolicy,
+  type RegistryResponse,
+} from '../../../lib/api'
+import { canManageAnyOrg, useSession } from '../../../lib/useSession'
 import { VerifiedBadge } from '../../../components/Badge'
 import { formatAgo } from '../../../lib/format'
-import { rankRegistryEntries, type KindFilter } from '../../../lib/registryRanking'
+import { isNewerVersion, latestVersion, rankRegistryEntries, type KindFilter } from '../../../lib/registryRanking'
 
 type View = { type: 'catalog' } | { type: 'detail'; entryId: string }
 
@@ -21,17 +28,22 @@ const KIND_OPTIONS: Array<{ value: KindFilter; label: string }> = [
 export default function MarketplacePage() {
   const { session, loading, error } = useSession()
   const [registry, setRegistry] = useState<RegistryResponse | null>(null)
+  const [policy, setPolicy] = useState<RegistryPolicy | null>(null)
   const [listError, setListError] = useState<string | null>(null)
+  const [reloadToken, setReloadToken] = useState(0)
   const [query, setQuery] = useState('')
   const [kindFilter, setKindFilter] = useState<KindFilter>('all')
   const [view, setView] = useState<View>({ type: 'catalog' })
+  const [installingKey, setInstallingKey] = useState<string | null>(null)
+  const [installMessage, setInstallMessage] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
-    getRegistry()
-      .then((response) => {
+    Promise.all([getRegistry(), getRegistryPolicy()])
+      .then(([registryResponse, policyResponse]) => {
         if (cancelled) return
-        setRegistry(response)
+        setRegistry(registryResponse)
+        setPolicy(policyResponse)
         setListError(null)
       })
       .catch(() => {
@@ -40,7 +52,25 @@ export default function MarketplacePage() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [reloadToken])
+
+  const canManage = session !== null && canManageAnyOrg(session.orgs)
+  const installedById = new Map((registry?.installed ?? []).map((i) => [i.id, i.version]))
+
+  async function onInstall(entry: RegistryEntryView, version: string) {
+    const key = `${entry.id}@${version}`
+    setInstallingKey(key)
+    setInstallMessage(null)
+    try {
+      await installPlugin(entry.id, version)
+      setInstallMessage(`${entry.name} ${version} queued for install — restart the server to apply.`)
+      setReloadToken((t) => t + 1)
+    } catch {
+      setListError('Could not install the plugin — try again.')
+    } finally {
+      setInstallingKey(null)
+    }
+  }
 
   if (loading) return <p className="loading">Loading…</p>
   if (error) return <p className="error-text">{error}</p>
@@ -77,7 +107,12 @@ export default function MarketplacePage() {
           </select>
         </div>
       </div>
+      <p className="policy-note">
+        Auto-update: {policy?.autoUpdate ? 'on' : 'off (default)'} — installed plugins run in-process with the
+        server&rsquo;s privileges; only install plugins you trust.
+      </p>
       {listError ? <p className="error-text">{listError}</p> : null}
+      {installMessage ? <p className="empty">{installMessage}</p> : null}
       {view.type === 'detail' && selected ? (
         <div className="card registry-detail">
           <button type="button" className="btn btn-ghost" onClick={() => setView({ type: 'catalog' })}>
@@ -102,34 +137,56 @@ export default function MarketplacePage() {
             ) : null}
           </p>
           <ul className="version-list">
-            {selected.versions.map((v) => (
-              <li key={v.version} className="version-row">
-                <span>{v.version}</span>
-                <span className="instance-name">sdk {v.sdkVersion}</span>
-              </li>
-            ))}
+            {selected.versions.map((v) => {
+              const installedVersion = installedById.get(selected.id)
+              const isInstalled = installedVersion === v.version
+              const key = `${selected.id}@${v.version}`
+              return (
+                <li key={v.version} className="version-row">
+                  <span>{v.version}</span>
+                  <span className="instance-name">sdk {v.sdkVersion}</span>
+                  {canManage ? (
+                    <button
+                      type="button"
+                      className={`btn${isInstalled ? ' btn-active' : ''}`}
+                      disabled={isInstalled || installingKey === key}
+                      onClick={() => onInstall(selected, v.version)}
+                    >
+                      {isInstalled ? 'installed' : installingKey === key ? 'installing…' : 'install'}
+                    </button>
+                  ) : null}
+                </li>
+              )
+            })}
           </ul>
         </div>
       ) : (
         <ul className="instance-list registry-list">
-          {ranked.map((entry) => (
-            <li key={entry.id} className="instance-row">
-              <span className="badge">{entry.kind}</span>
-              <span className="instance-name">
-                {entry.name} {entry.verified ? <VerifiedBadge /> : null}
-              </span>
-              <span className="registry-signals">
-                {entry.signals.stars !== undefined ? `★ ${entry.signals.stars}` : ''}
-              </span>
-              <button
-                type="button"
-                className="btn btn-ghost"
-                onClick={() => setView({ type: 'detail', entryId: entry.id })}
-              >
-                details
-              </button>
-            </li>
-          ))}
+          {ranked.map((entry) => {
+            const installedVersion = installedById.get(entry.id)
+            const latest = latestVersion(entry)
+            const hasUpgrade = installedVersion !== undefined && isNewerVersion(installedVersion, latest.version)
+            return (
+              <li key={entry.id} className="instance-row">
+                <span className="badge">{entry.kind}</span>
+                <span className="instance-name">
+                  {entry.name} {entry.verified ? <VerifiedBadge /> : null}
+                </span>
+                <span className="registry-signals">
+                  {entry.signals.stars !== undefined ? `★ ${entry.signals.stars}` : ''}
+                </span>
+                {installedVersion ? <span className="badge">installed {installedVersion}</span> : null}
+                {hasUpgrade ? <span className="badge health-checking">upgrade available</span> : null}
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={() => setView({ type: 'detail', entryId: entry.id })}
+                >
+                  details
+                </button>
+              </li>
+            )
+          })}
         </ul>
       )}
     </>
