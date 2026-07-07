@@ -1,3 +1,4 @@
+export * from './bundle'
 export * from './builtin'
 export * from './context'
 export * from './dispatcher'

@@ -25,6 +25,7 @@
     "@smokejumper/plugin-sentry": "workspace:*",
     "@smokejumper/plugin-slack": "workspace:*",
     "@smokejumper/plugin-webhook": "workspace:*",
+    "@smokejumper/registry": "workspace:*",
     "zod": "^3.25.0"
   },
   "devDependencies": {

@@ -25,6 +25,10 @@ const loadableKinds = new Set<PluginKind>([
   'notification-sink',
 ])
 
+export function isLoadableKind(kind: PluginKind): boolean {
+  return loadableKinds.has(kind)
+}
+
 export function createRegistry(): PluginRegistry {
   const plugins = new Map<string, RegisteredPlugin>()
 
@@ -37,7 +41,7 @@ export function createRegistry(): PluginRegistry {
   return {
     register(plugin) {
       const manifest = pluginManifestSchema.parse(plugin.manifest)
-      if (!loadableKinds.has(manifest.kind)) {
+      if (!isLoadableKind(manifest.kind)) {
         throw new Error(`plugin kind "${manifest.kind}" is not loadable in this phase`)
       }
       if (plugins.has(manifest.id)) {
