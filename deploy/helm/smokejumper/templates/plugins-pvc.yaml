@@ -1,0 +1,13 @@
+{{- if .Values.plugins.volume.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "smokejumper.fullname" . }}-plugins
+  labels:
+    {{- include "smokejumper.labels" . | nindent 4 }}
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: {{ .Values.plugins.volume.storage }}
+{{- end }}

@@ -62,6 +62,11 @@ spec:
                   name: {{ include "smokejumper.secretName" . }}
                   key: oidc-client-secret
             {{- end }}
+          {{- if .Values.plugins.volume.enabled }}
+          volumeMounts:
+            - name: plugins
+              mountPath: {{ .Values.plugins.dir }}
+          {{- end }}
           readinessProbe:
             httpGet:
               path: /healthz
@@ -76,6 +81,12 @@ spec:
             periodSeconds: 20
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+      {{- if .Values.plugins.volume.enabled }}
+      volumes:
+        - name: plugins
+          persistentVolumeClaim:
+            claimName: {{ include "smokejumper.fullname" . }}-plugins
+      {{- end }}
 ---
 apiVersion: v1
 kind: Service

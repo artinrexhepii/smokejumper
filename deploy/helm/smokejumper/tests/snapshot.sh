@@ -32,4 +32,14 @@ OIDC="$(helm template sj "$CHART" -f "$CHART/ci/oidc-values.yaml")"
 grep -q 'OIDC_ISSUER' <<<"$OIDC"
 grep -q 'name: OIDC_CLIENT_SECRET' <<<"$OIDC"
 
+echo "==> plugins volume is off by default and renders when enabled"
+grep -q 'SMOKEJUMPER_PLUGINS_DIR' <<<"$OUT"
+if [ "$(grep -c 'kind: PersistentVolumeClaim' <<<"$OUT")" != "0" ]; then
+  echo "FAIL: a plugins PVC rendered when plugins.volume.enabled is false"; exit 1
+fi
+PLUGINS="$(helm template sj "$CHART" -f "$CHART/ci/default-values.yaml" --set plugins.volume.enabled=true)"
+grep -q 'kind: PersistentVolumeClaim' <<<"$PLUGINS"
+grep -q -- '-plugins' <<<"$PLUGINS"
+grep -q 'mountPath: /var/lib/smokejumper/plugins-installed' <<<"$PLUGINS"
+
 echo "PASS: chart snapshot invariants hold"

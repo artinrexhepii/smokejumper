@@ -72,4 +72,13 @@ service:
 seed:
   enabled: true
 
+plugins:
+  dir: /var/lib/smokejumper/plugins-installed
+  volume:
+    enabled: false
+    storage: 1Gi
+  trustKeys: ""
+  registryUrl: ""
+  autoUpdate: false
+
 resources: {}

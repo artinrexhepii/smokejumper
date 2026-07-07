@@ -11,6 +11,14 @@ data:
   PUBLIC_BASE_URL: {{ .Values.publicBaseUrl | quote }}
   SMOKEJUMPER_FAKE_MODEL: {{ ternary "1" "" .Values.fakeModel | quote }}
   SMOKEJUMPER_SECURE_COOKIES: {{ ternary "1" "" .Values.secureCookies | quote }}
+  SMOKEJUMPER_PLUGINS_DIR: {{ .Values.plugins.dir | quote }}
+  SMOKEJUMPER_PLUGIN_AUTOUPDATE: {{ ternary "1" "" .Values.plugins.autoUpdate | quote }}
+  {{- if .Values.plugins.trustKeys }}
+  SMOKEJUMPER_PLUGIN_TRUST_KEYS: {{ .Values.plugins.trustKeys | quote }}
+  {{- end }}
+  {{- if .Values.plugins.registryUrl }}
+  SMOKEJUMPER_REGISTRY_URL: {{ .Values.plugins.registryUrl | quote }}
+  {{- end }}
   {{- if .Values.oidc.enabled }}
   OIDC_ISSUER: {{ required "oidc.issuer is required when oidc.enabled=true" .Values.oidc.issuer | quote }}
   OIDC_CLIENT_ID: {{ required "oidc.clientId is required when oidc.enabled=true" .Values.oidc.clientId | quote }}
