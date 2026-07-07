@@ -12,7 +12,7 @@ import {
 } from '@smokejumper/db'
 import { getInstanceTools, type HostTool, type PluginRegistry } from '@smokejumper/plugin-host'
 import type { IncidentEvent } from '@smokejumper/plugin-sdk'
-import { createAnthropicDriver } from './anthropic-driver'
+import { createModelDriver } from './model-driver'
 import { BudgetExceededError, createBudget } from './budget'
 import { resolveEngineConfig, type EngineBudgets, type EngineModels } from './config'
 import type { DriverTool, ModelDriver } from './driver'
@@ -47,7 +47,7 @@ export interface CreateInvestigatorOptions {
 export function createInvestigator(opts: CreateInvestigatorOptions): Investigator {
   const config = resolveEngineConfig({ models: opts.models, budgets: opts.budgets })
   const driver =
-    opts._driver ?? (config.models === 'fake' ? createFakeDriver() : createAnthropicDriver(config.models))
+    opts._driver ?? (config.models === 'fake' ? createFakeDriver() : createModelDriver(config.models))
   const getTools =
     opts._getTools ??
     ((projectId: string) =>

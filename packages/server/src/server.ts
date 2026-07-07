@@ -13,7 +13,7 @@ import {
 import Fastify, { type FastifyInstance, type FastifyReply } from 'fastify'
 import { z } from 'zod'
 import {
-  createAnthropicDriver,
+  createModelDriver,
   createFakeDriver,
   resolveEngineConfig,
   type Embedder,
@@ -86,7 +86,7 @@ export function setSessionCookie(reply: FastifyReply, token: string, expiresAt: 
 
 function createEngineDriver(): ModelDriver {
   const config = resolveEngineConfig({})
-  return config.models === 'fake' ? createFakeDriver() : createAnthropicDriver(config.models)
+  return config.models === 'fake' ? createFakeDriver() : createModelDriver(config.models)
 }
 
 export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {

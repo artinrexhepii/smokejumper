@@ -1,7 +1,7 @@
 import { Agent } from '@mastra/core/agent'
 import { createTool } from '@mastra/core/tools'
 import { z } from 'zod'
-import type { EngineModels } from './config'
+import type { EngineModels, ModelProvider } from './config'
 import {
   planResultSchema,
   reviewResultSchema,
@@ -51,8 +51,8 @@ in the evidence provided, a root cause, contributing factors, and concrete actio
 Every entry in evidenceRefs must be one of the evidence ids provided — never invent an id.
 If no diagnosis is available, say so plainly in rootCause rather than speculating.`
 
-function anthropicModel(id: string): string {
-  return `anthropic/${id}`
+function providerModel(provider: ModelProvider, id: string): string {
+  return `${provider}/${id}`
 }
 
 function renderTriagePrompt(input: TriageInput): string {
@@ -162,14 +162,21 @@ function toMastraTools(tools: DriverTool[]) {
   )
 }
 
-export function createAnthropicDriver(models: EngineModels): ModelDriver {
+export function createModelDriver(models: EngineModels): ModelDriver {
+  if (
+    models.provider === 'google' &&
+    process.env.GEMINI_API_KEY &&
+    !process.env.GOOGLE_GENERATIVE_AI_API_KEY
+  ) {
+    process.env.GOOGLE_GENERATIVE_AI_API_KEY = process.env.GEMINI_API_KEY
+  }
   return {
     async triage(input, opts) {
       const agent = new Agent({
         id: 'smokejumper-triage',
         name: 'Smokejumper Triage',
         instructions: TRIAGE_INSTRUCTIONS,
-        model: anthropicModel(models.triage),
+        model: providerModel(models.provider, models.triage),
       })
       const result = await agent.generate(renderTriagePrompt(input), {
         abortSignal: opts.signal,
@@ -182,7 +189,7 @@ export function createAnthropicDriver(models: EngineModels): ModelDriver {
         id: 'smokejumper-planner',
         name: 'Smokejumper Planner',
         instructions: PLAN_INSTRUCTIONS,
-        model: anthropicModel(models.investigator),
+        model: providerModel(models.provider, models.investigator),
       })
       const result = await agent.generate(renderPlanPrompt(input), {
         abortSignal: opts.signal,
@@ -195,7 +202,7 @@ export function createAnthropicDriver(models: EngineModels): ModelDriver {
         id: `smokejumper-${input.name}`,
         name: `Smokejumper ${input.name}`,
         instructions: `${SPECIALIST_ROLES[input.name]}\n${SPECIALIST_INSTRUCTIONS}`,
-        model: anthropicModel(models.investigator),
+        model: providerModel(models.provider, models.investigator),
         tools: toMastraTools(tools),
       })
       const result = await agent.generate(renderSpecialistPrompt(input), {
@@ -203,7 +210,7 @@ export function createAnthropicDriver(models: EngineModels): ModelDriver {
         abortSignal: opts.signal,
         structuredOutput: {
           schema: specialistResultSchema,
-          model: anthropicModel(models.investigator),
+          model: providerModel(models.provider, models.investigator),
         },
       })
       return specialistResultSchema.parse(result.object)
@@ -213,7 +220,7 @@ export function createAnthropicDriver(models: EngineModels): ModelDriver {
         id: 'smokejumper-synthesis',
         name: 'Smokejumper Synthesis',
         instructions: SYNTHESIS_INSTRUCTIONS,
-        model: anthropicModel(models.synthesis),
+        model: providerModel(models.provider, models.synthesis),
       })
       const result = await agent.generate(renderSynthesisPrompt(input), {
         structuredOutput: { schema: synthesisResultSchema },
@@ -225,7 +232,7 @@ export function createAnthropicDriver(models: EngineModels): ModelDriver {
         id: 'smokejumper-review',
         name: 'Smokejumper Review',
         instructions: REVIEW_INSTRUCTIONS,
-        model: anthropicModel(models.synthesis),
+        model: providerModel(models.provider, models.synthesis),
       })
       const result = await agent.generate(renderReviewPrompt(input), {
         abortSignal: opts?.signal,

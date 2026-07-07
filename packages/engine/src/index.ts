@@ -1,8 +1,8 @@
-export { createAnthropicDriver } from './anthropic-driver'
+export { createModelDriver } from './model-driver'
 export { BudgetExceededError, createBudget } from './budget'
 export type { Budget, BudgetStats } from './budget'
 export { DEFAULT_BUDGETS, resolveEngineConfig } from './config'
-export type { EngineBudgets, EngineConfig, EngineModels } from './config'
+export type { EngineBudgets, EngineConfig, EngineModels, ModelProvider } from './config'
 export {
   SPECIALIST_NAMES,
   planResultSchema,
