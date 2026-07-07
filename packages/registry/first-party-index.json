@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-07T00:00:00.000Z",
+  "generatedAt": "2026-07-07T11:14:41.063Z",
   "entries": [
     {
       "id": "webhook",
@@ -8,7 +8,9 @@
       "description": "Ingests alerts from any system that can POST JSON with a shared token",
       "repo": "https://github.com/artinrexhepii/smokejumper",
       "verified": true,
-      "signals": {},
+      "signals": {
+        "stars": 0
+      },
       "versions": [
         {
           "version": "0.1.0",
@@ -27,7 +29,9 @@
       "description": "Ingests Sentry issue alert webhooks",
       "repo": "https://github.com/artinrexhepii/smokejumper",
       "verified": true,
-      "signals": {},
+      "signals": {
+        "stars": 0
+      },
       "versions": [
         {
           "version": "0.1.0",
@@ -46,7 +50,9 @@
       "description": "Inspects containers, logs, and resource usage via the Docker Engine API",
       "repo": "https://github.com/artinrexhepii/smokejumper",
       "verified": true,
-      "signals": {},
+      "signals": {
+        "stars": 0
+      },
       "versions": [
         {
           "version": "0.1.0",
@@ -65,7 +71,9 @@
       "description": "Probes HTTP endpoints for status and latency",
       "repo": "https://github.com/artinrexhepii/smokejumper",
       "verified": true,
-      "signals": {},
+      "signals": {
+        "stars": 0
+      },
       "versions": [
         {
           "version": "0.1.0",
@@ -84,7 +92,9 @@
       "description": "Correlates incidents with recent GitHub deployments and commits",
       "repo": "https://github.com/artinrexhepii/smokejumper",
       "verified": true,
-      "signals": {},
+      "signals": {
+        "stars": 0
+      },
       "versions": [
         {
           "version": "0.1.0",
@@ -103,7 +113,9 @@
       "description": "Posts incident events to a Slack channel via chat.postMessage",
       "repo": "https://github.com/artinrexhepii/smokejumper",
       "verified": true,
-      "signals": {},
+      "signals": {
+        "stars": 0
+      },
       "versions": [
         {
           "version": "0.1.0",
@@ -122,7 +134,9 @@
       "description": "Reads CloudWatch alarms, metric statistics, and logs (Insights + filtered events)",
       "repo": "https://github.com/artinrexhepii/smokejumper",
       "verified": true,
-      "signals": {},
+      "signals": {
+        "stars": 0
+      },
       "versions": [
         {
           "version": "0.1.0",
@@ -141,7 +155,9 @@
       "description": "Ingests Prometheus Alertmanager webhook notifications",
       "repo": "https://github.com/artinrexhepii/smokejumper",
       "verified": true,
-      "signals": {},
+      "signals": {
+        "stars": 0
+      },
       "versions": [
         {
           "version": "0.1.0",
@@ -160,7 +176,9 @@
       "description": "Queries logs from a Grafana Loki server via LogQL",
       "repo": "https://github.com/artinrexhepii/smokejumper",
       "verified": true,
-      "signals": {},
+      "signals": {
+        "stars": 0
+      },
       "versions": [
         {
           "version": "0.1.0",
@@ -179,7 +197,9 @@
       "description": "Queries metrics, alerts, and scrape targets from a Prometheus server",
       "repo": "https://github.com/artinrexhepii/smokejumper",
       "verified": true,
-      "signals": {},
+      "signals": {
+        "stars": 0
+      },
       "versions": [
         {
           "version": "0.1.0",
@@ -198,7 +218,9 @@
       "description": "Queries Datadog metrics timeseries, log search, and monitors",
       "repo": "https://github.com/artinrexhepii/smokejumper",
       "verified": true,
-      "signals": {},
+      "signals": {
+        "stars": 0
+      },
       "versions": [
         {
           "version": "0.1.0",
@@ -217,7 +239,9 @@
       "description": "Ingests PagerDuty Events API v2 webhooks and normalizes them with dedup keys",
       "repo": "https://github.com/artinrexhepii/smokejumper",
       "verified": true,
-      "signals": {},
+      "signals": {
+        "stars": 0
+      },
       "versions": [
         {
           "version": "0.1.0",
@@ -236,7 +260,9 @@
       "description": "Posts an event or note to a PagerDuty incident via the PagerDuty API",
       "repo": "https://github.com/artinrexhepii/smokejumper",
       "verified": true,
-      "signals": {},
+      "signals": {
+        "stars": 0
+      },
       "versions": [
         {
           "version": "0.1.0",
@@ -255,7 +281,9 @@
       "description": "Queries Grafana datasource-proxy metrics and annotations via the Grafana HTTP API",
       "repo": "https://github.com/artinrexhepii/smokejumper",
       "verified": true,
-      "signals": {},
+      "signals": {
+        "stars": 0
+      },
       "versions": [
         {
           "version": "0.1.0",
@@ -274,7 +302,9 @@
       "description": "Runs time-bounded _search queries over a log index pattern",
       "repo": "https://github.com/artinrexhepii/smokejumper",
       "verified": true,
-      "signals": {},
+      "signals": {
+        "stars": 0
+      },
       "versions": [
         {
           "version": "0.1.0",
@@ -293,7 +323,9 @@
       "description": "Reads pods, logs, events, and deployments via the Kubernetes CoreV1/AppsV1 APIs",
       "repo": "https://github.com/artinrexhepii/smokejumper",
       "verified": true,
-      "signals": {},
+      "signals": {
+        "stars": 0
+      },
       "versions": [
         {
           "version": "0.1.0",
@@ -306,6 +338,6 @@
       ]
     }
   ],
-  "signature": "/SQD94OY9EVTtiYyihly700/sHtllW4w+pmIdMt+g2J65IeAIMssAjgk6D+FZlw5YyhFNXFTSg4jktvPEA+8Dg==",
+  "signature": "sMqEpSTynk35OJNRxssYbTqHAp9mML80BT/l+C5sUX9P6NEPTu3tZd37xDeJZhNPsTVRtO7voDI9SOo3zhNbAA==",
   "signer": "smokejumper-first-party-2026"
 }
