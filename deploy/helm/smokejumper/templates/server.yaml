@@ -55,6 +55,11 @@ spec:
                 secretKeyRef:
                   name: {{ include "smokejumper.secretName" . }}
                   key: anthropic-api-key
+            - name: GEMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "smokejumper.secretName" . }}
+                  key: gemini-api-key
             {{- if .Values.oidc.enabled }}
             - name: OIDC_CLIENT_SECRET
               valueFrom:

@@ -37,6 +37,7 @@ encryptionKey: ""
 existingSecret: ""
 
 anthropicApiKey: ""
+geminiApiKey: ""
 fakeModel: false
 secureCookies: false
 
