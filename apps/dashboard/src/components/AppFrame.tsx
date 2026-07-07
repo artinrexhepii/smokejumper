@@ -2,12 +2,12 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useEffect, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { logout } from '../lib/api'
 import { canManageAnyOrg, useSession } from '../lib/useSession'
 import { HowItWorks } from './HowItWorks'
-
-const ONBOARDED_KEY = 'sj_onboarded_v1'
+import { Tour } from './Tour'
+import { getTourForPath, TOUR_SEEN_PREFIX, type TourDef } from '../lib/tours'
 
 function Icon({ path, filled = false }: { path: ReactNode; filled?: boolean }) {
   return (
@@ -94,17 +94,34 @@ export function AppFrame({ children }: { children: ReactNode }) {
   const router = useRouter()
   const { session } = useSession()
   const [helpOpen, setHelpOpen] = useState(false)
+  const [activeTour, setActiveTour] = useState<TourDef | null>(null)
+  const autoStarted = useRef<Set<string>>(new Set())
 
   const isAuthPage = pathname === '/login' || pathname === '/signup' || pathname.startsWith('/join')
   const canManage = session !== null && canManageAnyOrg(session.orgs)
+  const pageTour = getTourForPath(pathname)
 
-  // First-run: open the guided tour once, after the user is signed in.
+  const finishTour = useCallback(() => {
+    setActiveTour((current) => {
+      if (current) {
+        try {
+          window.localStorage.setItem(TOUR_SEEN_PREFIX + current.id, '1')
+        } catch {}
+      }
+      return null
+    })
+  }, [])
+
+  // First visit to each page auto-runs its walkthrough (once, tracked in localStorage).
   useEffect(() => {
-    if (isAuthPage || session === null) return
+    if (isAuthPage || session === null || !pageTour) return
     if (typeof window === 'undefined') return
-    if (window.localStorage.getItem(ONBOARDED_KEY)) return
-    setHelpOpen(true)
-  }, [isAuthPage, session])
+    if (autoStarted.current.has(pageTour.id)) return
+    autoStarted.current.add(pageTour.id)
+    if (window.localStorage.getItem(TOUR_SEEN_PREFIX + pageTour.id)) return
+    const timer = setTimeout(() => setActiveTour(pageTour), 700)
+    return () => clearTimeout(timer)
+  }, [isAuthPage, session, pageTour])
 
   // Any page can open the tour by dispatching a `sj:help` event.
   useEffect(() => {
@@ -115,9 +132,6 @@ export function AppFrame({ children }: { children: ReactNode }) {
 
   function dismissHelp() {
     setHelpOpen(false)
-    try {
-      window.localStorage.setItem(ONBOARDED_KEY, '1')
-    } catch {}
   }
 
   async function onLogout() {
@@ -150,14 +164,16 @@ export function AppFrame({ children }: { children: ReactNode }) {
 
         <nav className="rail-nav" aria-label="Primary">
           <span className="rail-section">Operations</span>
-          <Link href="/" className={`rail-link${navActive('/') ? ' is-active' : ''}`}>
+          <Link href="/" className={`rail-link${navActive('/') ? ' is-active' : ''}`} data-tour="nav-dispatch">
             <Icon path={icons.flame} filled={navActive('/')} />
             Dispatch
           </Link>
 
           {canManage ? (
             <>
-              <span className="rail-section">Configure</span>
+              <span className="rail-section" data-tour="nav-configure">
+                Configure
+              </span>
               <Link
                 href="/settings/projects"
                 className={`rail-link${navActive('/settings/projects') ? ' is-active' : ''}`}
@@ -224,15 +240,23 @@ export function AppFrame({ children }: { children: ReactNode }) {
             <span className="topbar-eyebrow">Incident command</span>
             <h2 className="topbar-section">{sectionTitle(pathname)}</h2>
           </div>
-          <button type="button" className="btn btn-ghost topbar-help" onClick={() => setHelpOpen(true)}>
-            <Icon path={icons.help} />
-            Guide
-          </button>
+          {pageTour ? (
+            <button
+              type="button"
+              className="btn btn-ghost topbar-help"
+              data-tour="topbar-tour"
+              onClick={() => setActiveTour(pageTour)}
+            >
+              <Icon path={icons.help} />
+              Tour this page
+            </button>
+          ) : null}
         </header>
         <div className="workspace">{children}</div>
       </div>
 
       <HowItWorks open={helpOpen} onClose={dismissHelp} canManage={canManage} />
+      <Tour tour={activeTour} onClose={finishTour} />
     </div>
   )
 }

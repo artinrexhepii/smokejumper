@@ -80,7 +80,7 @@ export default function RunbookSettingsPage() {
     <>
       <div className="feed-head">
         <h1>Runbooks</h1>
-        <div className="settings-selects">
+        <div className="settings-selects" data-tour="runbooks-scope">
           <select
             aria-label="Organization"
             value={activeOrgId ?? ''}
@@ -124,7 +124,7 @@ export default function RunbookSettingsPage() {
         />
       ) : (
         <>
-          <div className="settings-actions">
+          <div className="settings-actions" data-tour="runbooks-add">
             <button
               type="button"
               className="btn btn-accent"

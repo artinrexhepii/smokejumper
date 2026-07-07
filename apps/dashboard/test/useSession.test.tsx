@@ -6,6 +6,7 @@ const replace = vi.fn()
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace, push: vi.fn(), refresh: vi.fn() }),
+  usePathname: () => '/',
 }))
 
 vi.mock('../src/lib/api', async (importOriginal) => {

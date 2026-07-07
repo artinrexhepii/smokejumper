@@ -183,7 +183,7 @@ export default function TeamPage() {
 
       {listError ? <p className="error-text">{listError}</p> : null}
 
-      <div className="card">
+      <div className="card" data-tour="team-members">
         <h2>Members</h2>
         {members === null ? (
           <p className="loading">Loading members…</p>
@@ -225,7 +225,7 @@ export default function TeamPage() {
         )}
       </div>
 
-      <div className="card">
+      <div className="card" data-tour="team-invite">
         <h2>Invite a teammate</h2>
         <p className="text-dim" style={{ fontSize: '0.85rem', margin: '0.3rem 0 0.9rem' }}>
           Generate a link and share it however you like — no email server required. Leave the email blank for a link
@@ -285,7 +285,7 @@ export default function TeamPage() {
         )}
       </div>
 
-      <div className="card">
+      <div className="card" data-tour="team-org">
         <h2>Organization</h2>
         <form onSubmit={onRename} style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', marginTop: '0.75rem' }}>
           <input

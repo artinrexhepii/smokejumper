@@ -93,7 +93,7 @@ export default function ProjectsPage() {
       </div>
 
       {canManageActive ? (
-        <div className="card">
+        <div className="card" data-tour="projects-create">
           <h2>New project</h2>
           <form onSubmit={onCreate} style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', marginTop: '0.75rem' }}>
             <input
@@ -118,7 +118,7 @@ export default function ProjectsPage() {
         <p className="policy-note">Only organization owners and admins can create projects.</p>
       )}
 
-      <h3>Existing projects</h3>
+      <h3 data-tour="projects-list">Existing projects</h3>
       {listError ? <p className="error-text">{listError}</p> : null}
       {projects === null ? (
         <p className="loading">Loading projects…</p>

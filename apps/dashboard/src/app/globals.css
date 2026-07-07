@@ -1439,3 +1439,127 @@ details > summary {
   .login-wrap { grid-template-columns: 1fr; }
   .login-aside { display: none; }
 }
+
+/* ===== Guided tour (spotlight coach-marks) ===== */
+.tour {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+}
+
+.tour-scrim {
+  position: fixed;
+  inset: 0;
+  background: transparent;
+}
+
+.tour-scrim.is-dark {
+  background: rgba(6, 4, 3, 0.72);
+  backdrop-filter: blur(2px);
+}
+
+.tour-spot {
+  position: fixed;
+  border-radius: var(--radius-sm);
+  box-shadow:
+    0 0 0 9999px rgba(6, 4, 3, 0.72),
+    0 0 0 1.5px var(--ember),
+    0 0 26px 6px var(--ember-glow);
+  pointer-events: none;
+  transition:
+    top 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+    left 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+    width 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+    height 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tour-pop {
+  position: fixed;
+  width: 340px;
+  max-width: calc(100vw - 32px);
+  background: linear-gradient(180deg, var(--ash-820), var(--ash-850));
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius);
+  padding: 1.05rem 1.15rem 1.15rem;
+  box-shadow:
+    0 26px 60px -22px rgba(0, 0, 0, 0.75),
+    0 0 0 1px rgba(255, 145, 82, 0.08);
+  animation: tour-fade 0.22s ease both;
+}
+
+.tour-pop-center {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 430px;
+  text-align: left;
+}
+
+@keyframes tour-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.tour-pop-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.tour-pop-count {
+  font: 600 0.66rem/1 var(--font-mono), monospace;
+  letter-spacing: 0.12em;
+  color: var(--ember-2);
+}
+
+.tour-pop-close {
+  background: none;
+  border: none;
+  color: var(--text-mute);
+  font: 500 0.76rem var(--font-ui), sans-serif;
+  cursor: pointer;
+  padding: 0.15rem 0.2rem;
+  transition: color 0.15s;
+}
+
+.tour-pop-close:hover { color: var(--text); }
+
+.tour-pop-title {
+  margin: 0 0 0.4rem;
+  font: 400 1.35rem/1.15 var(--font-display), Georgia, serif;
+  color: var(--text);
+}
+
+.tour-pop-body {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.tour-dots {
+  display: flex;
+  gap: 0.32rem;
+  margin: 0.95rem 0 0.85rem;
+}
+
+.tour-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--line-2);
+  transition: all 0.2s ease;
+}
+
+.tour-dot.is-on {
+  background: var(--ember);
+  width: 17px;
+}
+
+.tour-pop-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+

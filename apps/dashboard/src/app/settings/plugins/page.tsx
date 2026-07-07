@@ -142,7 +142,7 @@ export default function PluginSettingsPage() {
           <h1>Sources</h1>
           <p>Connect the telemetry and alert sources Smokejumper investigates through. Sources are configured per project.</p>
         </div>
-        <div className="scope-picker">
+        <div className="scope-picker" data-tour="sources-scope">
           <div className="scope-field">
             <span className="scope-label">Organization</span>
             <select
@@ -257,7 +257,7 @@ export default function PluginSettingsPage() {
               <p>From now on, investigators read this source when an incident opens here.</p>
             </li>
           </ol>
-          <div className="empty-actions">
+          <div className="empty-actions" data-tour="sources-add">
             <button
               type="button"
               className="btn btn-accent"
@@ -273,7 +273,7 @@ export default function PluginSettingsPage() {
         </section>
       ) : (
         <>
-          <div className="feed-head" style={{ marginTop: 0 }}>
+          <div className="feed-head" style={{ marginTop: 0 }} data-tour="sources-add">
             <h2>Connected sources</h2>
             <button
               type="button"
@@ -284,7 +284,7 @@ export default function PluginSettingsPage() {
               Add a source
             </button>
           </div>
-          <ul className="instance-list">
+          <ul className="instance-list" data-tour="sources-list">
             {instances.map((instance) => (
                 <li key={instance.id} className="instance-row">
                   <span className="badge">{instance.pluginId}</span>

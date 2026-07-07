@@ -4,6 +4,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace: vi.fn(), push: vi.fn(), refresh: vi.fn() }),
+  usePathname: () => '/settings/marketplace',
 }))
 
 vi.mock('../src/lib/api', async (importOriginal) => {

@@ -95,7 +95,7 @@ export default function MarketplacePage() {
     <>
       <div className="feed-head">
         <h1>Plugin marketplace</h1>
-        <div className="settings-selects">
+        <div className="settings-selects" data-tour="market-search">
           <input
             type="search"
             aria-label="Search plugins"
@@ -116,7 +116,7 @@ export default function MarketplacePage() {
           </select>
         </div>
       </div>
-      <p className="policy-note">
+      <p className="policy-note" data-tour="market-policy">
         Auto-update: {policy?.autoUpdate ? 'on' : 'off (default)'} — installed plugins run in-process with the
         server&rsquo;s privileges; only install plugins you trust.
       </p>
@@ -172,7 +172,7 @@ export default function MarketplacePage() {
           </ul>
         </div>
       ) : (
-        <ul className="instance-list registry-list">
+        <ul className="instance-list registry-list" data-tour="market-list">
           {ranked.map((entry) => {
             const installedVersion = installedById.get(entry.id)
             const latest = latestVersion(entry)

@@ -72,7 +72,7 @@ export default function FeedPage() {
 
   return (
     <>
-      <div className="board-hero">
+      <div className="board-hero" data-tour="board-hero">
         <div>
           <span className="board-hero-eyebrow">Incident command</span>
           <h1>Dispatch board</h1>
@@ -97,7 +97,7 @@ export default function FeedPage() {
       </div>
 
       {rows !== null && rows.length > 0 ? (
-        <div className="board-stats">
+        <div className="board-stats" data-tour="board-stats">
           <div className="stat is-hot">
             <span className="stat-num">{active}</span>
             <span className="stat-label">Active</span>
@@ -160,7 +160,7 @@ export default function FeedPage() {
               live · refreshes every 10s
             </span>
           </div>
-          <ol className="incident-list">
+          <ol className="incident-list" data-tour="incident-list">
             {rows.map(({ incident, project }) => (
               <li key={incident.id}>
                 <Link href={`/incidents/${incident.id}`} className={`incident-row sev-${incident.severity}`}>

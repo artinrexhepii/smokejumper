@@ -39,7 +39,7 @@ export default function IncidentPage({ params }: { params: Promise<{ id: string 
 
   return (
     <>
-      <header className="incident-head">
+      <header className="incident-head" data-tour="incident-head">
         <div className="incident-head-badges">
           <SeverityBadge severity={incident.severity} />
           <StatusBadge status={incident.status} />
@@ -58,26 +58,32 @@ export default function IncidentPage({ params }: { params: Promise<{ id: string 
           </p>
         ) : null}
       </header>
-      <TraceTimeline
-        steps={steps}
-        connection={connection}
-        evidence={evidence}
-        investigating={incident.status === 'open' || incident.status === 'investigating'}
-      />
-      <section className="card">
+      <div data-tour="trace-timeline">
+        <TraceTimeline
+          steps={steps}
+          connection={connection}
+          evidence={evidence}
+          investigating={incident.status === 'open' || incident.status === 'investigating'}
+        />
+      </div>
+      <section className="card" data-tour="findings">
         <h2>Findings</h2>
         <FindingsList findings={findings} evidence={evidence} />
       </section>
-      {diagnosis ? (
-        <DiagnosisCard diagnosis={diagnosis} evidence={evidence} />
-      ) : (
-        <section className="card">
-          <h2>Diagnosis</h2>
-          <p className="empty">No diagnosis yet — the investigation is still running.</p>
-        </section>
-      )}
-      <ReviewPanel incidentId={id} />
-      <section className="card">
+      <div data-tour="diagnosis">
+        {diagnosis ? (
+          <DiagnosisCard diagnosis={diagnosis} evidence={evidence} />
+        ) : (
+          <section className="card">
+            <h2>Diagnosis</h2>
+            <p className="empty">No diagnosis yet — the investigation is still running.</p>
+          </section>
+        )}
+      </div>
+      <div data-tour="review-panel">
+        <ReviewPanel incidentId={id} />
+      </div>
+      <section className="card" data-tour="evidence-log">
         <h2>Evidence log</h2>
         {evidence.length === 0 ? (
           <p className="empty">No evidence recorded yet.</p>
