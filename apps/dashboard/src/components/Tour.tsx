@@ -160,7 +160,7 @@ export function Tour({ tour, onClose }: { tour: TourDef | null; onClose: (comple
   const isLast = index === steps.length - 1
 
   const overlay = (
-    <div className="tour" role="dialog" aria-modal="true" aria-label={`${tour.label} walkthrough`}>
+    <div className="tour-overlay" role="dialog" aria-modal="true" aria-label={`${tour.label} walkthrough`}>
       {rect ? (
         <>
           {/* four dark panels around the target leave it fully visible and un-dimmed */}

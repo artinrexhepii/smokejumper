@@ -1441,7 +1441,8 @@ details > summary {
 }
 
 /* ===== Guided tour (spotlight coach-marks) ===== */
-.tour {
+/* NOTE: container is `.tour-overlay`, not `.tour` — `.tour` is the HowItWorks modal. */
+.tour-overlay {
   position: fixed;
   inset: 0;
   z-index: 120;
