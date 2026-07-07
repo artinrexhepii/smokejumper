@@ -12,3 +12,7 @@ export function StatusBadge({ status }: { status: IncidentStatus }) {
     </span>
   )
 }
+
+export function VerifiedBadge() {
+  return <span className="badge badge-verified">verified</span>
+}

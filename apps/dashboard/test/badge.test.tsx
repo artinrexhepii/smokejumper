@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest'
 import { cleanup, render, screen } from '@testing-library/react'
-import { SeverityBadge, StatusBadge } from '../src/components/Badge'
+import { SeverityBadge, StatusBadge, VerifiedBadge } from '../src/components/Badge'
 
 afterEach(cleanup)
 
@@ -27,5 +27,14 @@ describe('StatusBadge', () => {
     const badge = screen.getByText('resolved')
     expect(badge.className).toContain('st-resolved')
     expect(badge.querySelector('.dot')).toBeNull()
+  })
+})
+
+describe('VerifiedBadge', () => {
+  it('renders a verified label with its color class', () => {
+    render(<VerifiedBadge />)
+    const el = screen.getByText('verified')
+    expect(el.className).toContain('badge')
+    expect(el.className).toContain('badge-verified')
   })
 })
