@@ -231,6 +231,10 @@ export function listProjects(orgId: string): Promise<Project[]> {
   return apiFetch(`/api/orgs/${orgId}/projects`)
 }
 
+export function createProject(orgId: string, name: string): Promise<Project> {
+  return apiFetch(`/api/orgs/${orgId}/projects`, { method: 'POST', body: JSON.stringify({ name }) })
+}
+
 export function listIncidents(projectId: string): Promise<Incident[]> {
   return apiFetch(`/api/projects/${projectId}/incidents`)
 }
@@ -396,10 +400,98 @@ export function getRegistryPolicy(): Promise<RegistryPolicy> {
 export interface AuthConfig {
   password: boolean
   oidc: { enabled: boolean; buttonLabel: string }
+  needsSetup: boolean
+  allowSignup: boolean
 }
 
 export const oidcStartUrl = `${API_URL}/api/auth/oidc/start`
 
 export function getAuthConfig(): Promise<AuthConfig> {
   return apiFetch('/api/auth/config')
+}
+
+export interface OrgMember {
+  userId: string
+  email: string
+  name: string
+  role: OrgRole
+}
+
+export interface InviteView {
+  id: string
+  email: string | null
+  role: OrgRole
+  expiresAt: string
+  createdAt: string
+}
+
+export interface CreatedInvite {
+  id: string
+  role: OrgRole
+  email: string | null
+  token: string
+  url: string
+  expiresAt: string
+}
+
+export interface InvitePreview {
+  valid: boolean
+  orgName?: string
+  role?: OrgRole
+  email?: string | null
+}
+
+export function setup(input: {
+  email: string
+  password: string
+  name: string
+  orgName: string
+}): Promise<{ user: User }> {
+  return apiFetch('/api/setup', { method: 'POST', body: JSON.stringify(input) })
+}
+
+export function signup(input: { email: string; password: string; name: string }): Promise<{ user: User }> {
+  return apiFetch('/api/auth/signup', { method: 'POST', body: JSON.stringify(input) })
+}
+
+export function previewInvite(token: string): Promise<InvitePreview> {
+  return apiFetch(`/api/invites/${encodeURIComponent(token)}`)
+}
+
+export function acceptInvite(
+  token: string,
+  input: { name: string; password: string; email?: string },
+): Promise<{ user: User }> {
+  return apiFetch(`/api/invites/${encodeURIComponent(token)}/accept`, {
+    method: 'POST',
+    body: JSON.stringify(input),
+  })
+}
+
+export function listMembers(orgId: string): Promise<OrgMember[]> {
+  return apiFetch(`/api/orgs/${orgId}/members`)
+}
+
+export function setMemberRole(orgId: string, userId: string, role: OrgRole): Promise<void> {
+  return apiFetch(`/api/orgs/${orgId}/members/${userId}`, { method: 'PATCH', body: JSON.stringify({ role }) })
+}
+
+export function removeMember(orgId: string, userId: string): Promise<void> {
+  return apiFetch(`/api/orgs/${orgId}/members/${userId}`, { method: 'DELETE' })
+}
+
+export function createInvite(orgId: string, input: { email?: string; role: OrgRole }): Promise<CreatedInvite> {
+  return apiFetch(`/api/orgs/${orgId}/invites`, { method: 'POST', body: JSON.stringify(input) })
+}
+
+export function listInvites(orgId: string): Promise<InviteView[]> {
+  return apiFetch(`/api/orgs/${orgId}/invites`)
+}
+
+export function revokeInvite(orgId: string, inviteId: string): Promise<void> {
+  return apiFetch(`/api/orgs/${orgId}/invites/${inviteId}`, { method: 'DELETE' })
+}
+
+export function renameOrg(orgId: string, name: string): Promise<Org> {
+  return apiFetch(`/api/orgs/${orgId}`, { method: 'PATCH', body: JSON.stringify({ name }) })
 }
