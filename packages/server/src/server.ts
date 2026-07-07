@@ -29,6 +29,7 @@ import { registerAuthRoutes } from './routes/auth-oidc.ts'
 import { registerIngestRoutes } from './routes/ingest.ts'
 import { registerInstanceRoutes } from './routes/instances.ts'
 import { registerPluginCatalogRoute } from './routes/plugins.ts'
+import { registerRegistryRoutes, type RegistryRoutesDeps } from './routes/registry.ts'
 import { registerReviewRoutes } from './routes/reviews.ts'
 import { registerRunbookRoutes } from './routes/runbooks.ts'
 import { registerSseRoute } from './sse.ts'
@@ -43,6 +44,7 @@ export interface ServerDeps {
   embedder?: Embedder
   fetchImpl?: typeof fetch
   reviewDriver?: ModelDriver
+  registryClient?: RegistryRoutesDeps
 }
 
 declare module 'fastify' {
@@ -154,6 +156,10 @@ export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
       registry: deps.registry,
       incidentManager,
     })
+  }
+
+  if (deps.registryClient) {
+    registerRegistryRoutes(app, deps.registryClient)
   }
 
   if (deps.investigator) {

@@ -22,6 +22,9 @@ COPY --from=build --chown=node:node /repo/packages/server/package.json ./package
 # runMigrations reads these SQL files via new URL('../migrations', import.meta.url);
 # from the bundled dist/ that resolves to /app/migrations at runtime
 COPY --from=build --chown=node:node /repo/packages/db/migrations ./migrations
+# loadRegistryIndex reads this via new URL('../first-party-index.json', import.meta.url);
+# from the bundled dist/ that resolves to /app/first-party-index.json at runtime
+COPY --from=build --chown=node:node /repo/packages/registry/first-party-index.json ./first-party-index.json
 USER node
 EXPOSE 3400
 CMD ["node", "dist/main.js"]

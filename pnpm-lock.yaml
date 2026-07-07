@@ -228,6 +228,9 @@ importers:
       '@smokejumper/plugin-sdk':
         specifier: workspace:*
         version: link:../plugin-sdk
+      '@smokejumper/registry':
+        specifier: workspace:*
+        version: link:../registry
       fastify:
         specifier: ^5.9.0
         version: 5.9.0
