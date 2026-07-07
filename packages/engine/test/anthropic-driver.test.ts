@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { createAnthropicDriver, renderSynthesisPrompt } from '../src/anthropic-driver'
 
 const models = {
+  provider: 'anthropic' as const,
   triage: 'claude-haiku-4-5-20251001',
   investigator: 'claude-sonnet-5',
   synthesis: 'claude-sonnet-5',

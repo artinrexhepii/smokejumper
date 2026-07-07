@@ -248,7 +248,7 @@ describe('investigate (fake driver)', () => {
       registry: createRegistry(),
       bus,
       encryptionKey,
-      models: { triage: 'claude-haiku-4-5-20251001', investigator: 'claude-sonnet-5', synthesis: 'claude-sonnet-5' },
+      models: { provider: 'anthropic' as const, triage: 'claude-haiku-4-5-20251001', investigator: 'claude-sonnet-5', synthesis: 'claude-sonnet-5' },
     })
     expect(investigator.investigate).toBeTypeOf('function')
   })

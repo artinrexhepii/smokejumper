@@ -3,9 +3,10 @@ import { resolveEngineConfig } from '../src/config'
 import { synthesisResultSchema, triageResultSchema } from '../src/driver'
 
 describe('resolveEngineConfig', () => {
-  it('defaults models per the contracts doc and budgets to 25 calls / 4 minutes', () => {
+  it('defaults to Anthropic models when no keys are set', () => {
     const config = resolveEngineConfig({}, {})
     expect(config.models).toEqual({
+      provider: 'anthropic',
       triage: 'claude-haiku-4-5-20251001',
       investigator: 'claude-sonnet-5',
       synthesis: 'claude-sonnet-5',
@@ -13,20 +14,62 @@ describe('resolveEngineConfig', () => {
     expect(config.budgets).toEqual({ maxToolCalls: 25, maxWallMs: 240_000 })
   })
 
-  it('reads model overrides from the environment', () => {
+  it('reads model overrides from the environment (Anthropic)', () => {
     const config = resolveEngineConfig(
       {},
       {
+        ANTHROPIC_API_KEY: 'sk-ant',
         SMOKEJUMPER_TRIAGE_MODEL: 'claude-haiku-x',
         SMOKEJUMPER_INVESTIGATOR_MODEL: 'claude-sonnet-x',
         SMOKEJUMPER_SYNTHESIS_MODEL: 'claude-opus-x',
       },
     )
     expect(config.models).toEqual({
+      provider: 'anthropic',
       triage: 'claude-haiku-x',
       investigator: 'claude-sonnet-x',
       synthesis: 'claude-opus-x',
     })
+  })
+
+  it('auto-detects Google and its defaults from GEMINI_API_KEY', () => {
+    const config = resolveEngineConfig({}, { GEMINI_API_KEY: 'g-key' })
+    expect(config.models).toEqual({
+      provider: 'google',
+      triage: 'gemini-2.5-flash',
+      investigator: 'gemini-2.5-pro',
+      synthesis: 'gemini-2.5-pro',
+    })
+  })
+
+  it('also detects Google from GOOGLE_GENERATIVE_AI_API_KEY or GOOGLE_API_KEY', () => {
+    expect(resolveEngineConfig({}, { GOOGLE_GENERATIVE_AI_API_KEY: 'g' }).models).toMatchObject({
+      provider: 'google',
+    })
+    expect(resolveEngineConfig({}, { GOOGLE_API_KEY: 'g' }).models).toMatchObject({
+      provider: 'google',
+    })
+  })
+
+  it('applies bare model overrides on top of the Google provider', () => {
+    const config = resolveEngineConfig(
+      {},
+      { GEMINI_API_KEY: 'g', SMOKEJUMPER_INVESTIGATOR_MODEL: 'gemini-3-pro' },
+    )
+    expect(config.models).toMatchObject({ provider: 'google', investigator: 'gemini-3-pro' })
+  })
+
+  it('prefers Anthropic when both keys are set', () => {
+    const config = resolveEngineConfig({}, { ANTHROPIC_API_KEY: 'a', GEMINI_API_KEY: 'g' })
+    expect(config.models).toMatchObject({ provider: 'anthropic' })
+  })
+
+  it('honors SMOKEJUMPER_MODEL_PROVIDER=google over the both-keys default', () => {
+    const config = resolveEngineConfig(
+      {},
+      { ANTHROPIC_API_KEY: 'a', GEMINI_API_KEY: 'g', SMOKEJUMPER_MODEL_PROVIDER: 'google' },
+    )
+    expect(config.models).toMatchObject({ provider: 'google' })
   })
 
   it('switches to the fake driver via SMOKEJUMPER_FAKE_MODEL=1', () => {
@@ -35,10 +78,13 @@ describe('resolveEngineConfig', () => {
 
   it('prefers explicit options over the environment and merges partial budgets', () => {
     const config = resolveEngineConfig(
-      { models: { triage: 't', investigator: 'i', synthesis: 's' }, budgets: { maxToolCalls: 3 } },
+      {
+        models: { provider: 'anthropic', triage: 't', investigator: 'i', synthesis: 's' },
+        budgets: { maxToolCalls: 3 },
+      },
       { SMOKEJUMPER_FAKE_MODEL: '1' },
     )
-    expect(config.models).toEqual({ triage: 't', investigator: 'i', synthesis: 's' })
+    expect(config.models).toEqual({ provider: 'anthropic', triage: 't', investigator: 'i', synthesis: 's' })
     expect(config.budgets).toEqual({ maxToolCalls: 3, maxWallMs: 240_000 })
   })
 })
