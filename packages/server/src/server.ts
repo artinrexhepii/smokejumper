@@ -10,7 +10,7 @@ import {
   type Db,
   type User,
 } from '@smokejumper/db'
-import Fastify, { type FastifyInstance } from 'fastify'
+import Fastify, { type FastifyInstance, type FastifyReply } from 'fastify'
 import { z } from 'zod'
 import {
   createAnthropicDriver,
@@ -26,6 +26,7 @@ import { investigateOnOpen, type InvestigatorLike } from './investigate-on-open.
 import type { OidcProvider } from './oidc.ts'
 import { registerDataRoutes } from './routes.ts'
 import { registerAuthRoutes } from './routes/auth-oidc.ts'
+import { registerTenancyRoutes } from './routes/tenancy.ts'
 import { registerIngestRoutes } from './routes/ingest.ts'
 import { registerInstanceRoutes } from './routes/instances.ts'
 import { registerPluginCatalogRoute } from './routes/plugins.ts'
@@ -61,12 +62,26 @@ const PUBLIC_API_ROUTES = new Set([
   '/api/auth/config',
   '/api/auth/oidc/start',
   '/api/auth/oidc/callback',
+  '/api/setup',
+  '/api/auth/signup',
+  '/api/invites/:token',
+  '/api/invites/:token/accept',
 ])
 
 const loginBody = z.object({ email: z.string(), password: z.string() })
 
-function toPublicUser(user: User): { id: string; email: string; name: string } {
+export function toPublicUser(user: User): { id: string; email: string; name: string } {
   return { id: user.id, email: user.email, name: user.name }
+}
+
+export function setSessionCookie(reply: FastifyReply, token: string, expiresAt: Date): void {
+  reply.setCookie(SESSION_COOKIE, token, {
+    httpOnly: true,
+    sameSite: 'lax',
+    path: '/',
+    expires: expiresAt,
+    secure: process.env.SMOKEJUMPER_SECURE_COOKIES === '1',
+  })
 }
 
 function createEngineDriver(): ModelDriver {
@@ -102,13 +117,7 @@ export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
     const user = await verifyCredentials(deps.db, parsed.data)
     if (!user) return reply.code(401).send({ error: 'invalid credentials' })
     const { token, expiresAt } = await createSession(deps.db, user.id)
-    reply.setCookie(SESSION_COOKIE, token, {
-      httpOnly: true,
-      sameSite: 'lax',
-      path: '/',
-      expires: expiresAt,
-      secure: process.env.SMOKEJUMPER_SECURE_COOKIES === '1',
-    })
+    setSessionCookie(reply, token, expiresAt)
     return { user: toPublicUser(user) }
   })
 
@@ -136,6 +145,7 @@ export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
 
   registerDataRoutes(app, deps)
   registerAuthRoutes(app, deps)
+  registerTenancyRoutes(app, deps)
   registerSseRoute(app, deps)
   registerRunbookRoutes(app, { db: deps.db, embedder: deps.embedder, fetchImpl: deps.fetchImpl })
 

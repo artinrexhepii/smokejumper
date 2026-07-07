@@ -1,12 +1,14 @@
 import { randomBytes, scryptSync, timingSafeEqual } from 'node:crypto'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, gt, isNull } from 'drizzle-orm'
 import type { Db } from './db.ts'
 import {
+  invites,
   organizations,
   orgMemberships,
   projects,
   sessions,
   users,
+  type Invite,
   type Organization,
   type OrgRole,
   type Project,
@@ -37,6 +39,16 @@ export async function createOrganization(
 
 export async function getOrganizationBySlug(db: Db, slug: string): Promise<Organization | undefined> {
   const [org] = await db.select().from(organizations).where(eq(organizations.slug, slug))
+  return org
+}
+
+export async function getOrganizationById(db: Db, id: string): Promise<Organization | undefined> {
+  const [org] = await db.select().from(organizations).where(eq(organizations.id, id))
+  return org
+}
+
+export async function getPrimaryOrganization(db: Db): Promise<Organization | undefined> {
+  const [org] = await db.select().from(organizations).orderBy(organizations.createdAt).limit(1)
   return org
 }
 
@@ -143,4 +155,121 @@ export async function getMemberRole(
     .from(orgMemberships)
     .where(and(eq(orgMemberships.orgId, input.orgId), eq(orgMemberships.userId, input.userId)))
   return row?.role ?? null
+}
+
+export async function countUsers(db: Db): Promise<number> {
+  const rows = await db.select({ id: users.id }).from(users)
+  return rows.length
+}
+
+export async function updateOrganization(
+  db: Db,
+  orgId: string,
+  input: { name: string },
+): Promise<Organization> {
+  const [org] = await db
+    .update(organizations)
+    .set({ name: input.name })
+    .where(eq(organizations.id, orgId))
+    .returning()
+  return org!
+}
+
+export interface OrgMember {
+  userId: string
+  email: string
+  name: string
+  role: OrgRole
+}
+
+export async function listMembers(db: Db, orgId: string): Promise<OrgMember[]> {
+  return db
+    .select({
+      userId: users.id,
+      email: users.email,
+      name: users.name,
+      role: orgMemberships.role,
+    })
+    .from(orgMemberships)
+    .innerJoin(users, eq(orgMemberships.userId, users.id))
+    .where(eq(orgMemberships.orgId, orgId))
+}
+
+export async function setMemberRole(
+  db: Db,
+  input: { orgId: string; userId: string; role: OrgRole },
+): Promise<void> {
+  await db
+    .update(orgMemberships)
+    .set({ role: input.role })
+    .where(and(eq(orgMemberships.orgId, input.orgId), eq(orgMemberships.userId, input.userId)))
+}
+
+export async function removeMember(db: Db, input: { orgId: string; userId: string }): Promise<void> {
+  await db
+    .delete(orgMemberships)
+    .where(and(eq(orgMemberships.orgId, input.orgId), eq(orgMemberships.userId, input.userId)))
+}
+
+export async function countOwners(db: Db, orgId: string): Promise<number> {
+  const rows = await db
+    .select({ userId: orgMemberships.userId })
+    .from(orgMemberships)
+    .where(and(eq(orgMemberships.orgId, orgId), eq(orgMemberships.role, 'owner')))
+  return rows.length
+}
+
+export async function createInvite(
+  db: Db,
+  input: {
+    orgId: string
+    email?: string | null
+    role: OrgRole
+    tokenHash: string
+    createdBy: string
+    expiresAt: Date
+  },
+): Promise<Invite> {
+  const [invite] = await db
+    .insert(invites)
+    .values({
+      orgId: input.orgId,
+      email: input.email ?? null,
+      role: input.role,
+      tokenHash: input.tokenHash,
+      createdBy: input.createdBy,
+      expiresAt: input.expiresAt,
+    })
+    .returning()
+  return invite!
+}
+
+export async function getInviteById(db: Db, id: string): Promise<Invite | undefined> {
+  const [invite] = await db.select().from(invites).where(eq(invites.id, id))
+  return invite
+}
+
+export async function getInviteByTokenHash(db: Db, tokenHash: string): Promise<Invite | undefined> {
+  const [invite] = await db.select().from(invites).where(eq(invites.tokenHash, tokenHash))
+  return invite
+}
+
+export async function listInvites(db: Db, orgId: string): Promise<Invite[]> {
+  return db
+    .select()
+    .from(invites)
+    .where(
+      and(eq(invites.orgId, orgId), isNull(invites.acceptedAt), gt(invites.expiresAt, new Date())),
+    )
+}
+
+export async function revokeInvite(db: Db, id: string): Promise<void> {
+  await db.delete(invites).where(eq(invites.id, id))
+}
+
+export async function markInviteAccepted(db: Db, id: string, userId: string): Promise<void> {
+  await db
+    .update(invites)
+    .set({ acceptedAt: new Date(), acceptedBy: userId })
+    .where(eq(invites.id, id))
 }

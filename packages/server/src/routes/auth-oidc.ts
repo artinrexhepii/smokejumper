@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto'
 import {
   addMember,
   appendAudit,
+  countUsers,
   createSession,
   createUser,
   getOrganizationBySlug,
@@ -29,6 +30,8 @@ export function registerAuthRoutes(app: FastifyInstance, deps: ServerDeps): void
       enabled: Boolean(deps.oidc),
       buttonLabel: deps.oidc?.buttonLabel ?? 'Sign in with SSO',
     },
+    needsSetup: (await countUsers(deps.db)) === 0,
+    allowSignup: process.env.SMOKEJUMPER_ALLOW_SIGNUP === '1',
   }))
 
   app.get('/api/auth/oidc/start', async (request, reply) => {

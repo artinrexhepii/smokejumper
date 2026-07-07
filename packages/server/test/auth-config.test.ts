@@ -50,6 +50,8 @@ describe('GET /api/auth/config', () => {
     expect(res.json()).toEqual({
       password: true,
       oidc: { enabled: false, buttonLabel: 'Sign in with SSO' },
+      needsSetup: true,
+      allowSignup: false,
     })
   })
 
@@ -60,6 +62,8 @@ describe('GET /api/auth/config', () => {
     expect(res.json()).toEqual({
       password: true,
       oidc: { enabled: true, buttonLabel: 'Corp SSO' },
+      needsSetup: true,
+      allowSignup: false,
     })
   })
 })

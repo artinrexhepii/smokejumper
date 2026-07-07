@@ -282,4 +282,78 @@ describe('data routes', () => {
     })
     expect(res.statusCode).toBe(403)
   })
+
+  it('creates a project as an owner, slugifies the name, and audits it', async () => {
+    const ctx = await setup()
+    const res = await ctx.app.inject({
+      method: 'POST',
+      url: `/api/orgs/${ctx.orgId}/projects`,
+      cookies: ctx.cookies,
+      payload: { name: 'Checkout API' },
+    })
+    expect(res.statusCode).toBe(201)
+    const project = res.json()
+    expect(project.name).toBe('Checkout API')
+    expect(project.slug).toBe('checkout-api')
+    expect(project.orgId).toBe(ctx.orgId)
+
+    const list = await ctx.app.inject({
+      method: 'GET',
+      url: `/api/orgs/${ctx.orgId}/projects`,
+      cookies: ctx.cookies,
+    })
+    expect(list.json().map((p: { slug: string }) => p.slug)).toContain('checkout-api')
+
+    const audit = await ctx.app.inject({
+      method: 'GET',
+      url: `/api/orgs/${ctx.orgId}/audit`,
+      cookies: ctx.cookies,
+    })
+    expect(audit.json()[0]).toMatchObject({
+      action: 'project.create',
+      actorType: 'user',
+      subjectType: 'project',
+      subjectId: project.id,
+    })
+  })
+
+  it('rejects duplicate project names and blank names', async () => {
+    const ctx = await setup()
+    const dup = await ctx.app.inject({
+      method: 'POST',
+      url: `/api/orgs/${ctx.orgId}/projects`,
+      cookies: ctx.cookies,
+      payload: { name: 'Demo' },
+    })
+    expect(dup.statusCode).toBe(409)
+    const blank = await ctx.app.inject({
+      method: 'POST',
+      url: `/api/orgs/${ctx.orgId}/projects`,
+      cookies: ctx.cookies,
+      payload: { name: '   ' },
+    })
+    expect(blank.statusCode).toBe(400)
+  })
+
+  it('forbids project creation for plain members and non-members', async () => {
+    const ctx = await setup()
+    const member = await createUser(ctx.db, { email: 'member@example.com', password: 'pw', name: 'Mem' })
+    await addMember(ctx.db, { orgId: ctx.orgId, userId: member.id, role: 'member' })
+    const { token } = await createSession(ctx.db, member.id)
+    const asMember = await ctx.app.inject({
+      method: 'POST',
+      url: `/api/orgs/${ctx.orgId}/projects`,
+      cookies: { sj_session: token },
+      payload: { name: 'Blocked' },
+    })
+    expect(asMember.statusCode).toBe(403)
+
+    const crossOrg = await ctx.app.inject({
+      method: 'POST',
+      url: `/api/orgs/${ctx.otherOrgId}/projects`,
+      cookies: ctx.cookies,
+      payload: { name: 'Sneaky' },
+    })
+    expect(crossOrg.statusCode).toBe(403)
+  })
 })

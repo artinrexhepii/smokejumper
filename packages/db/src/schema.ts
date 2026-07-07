@@ -72,6 +72,21 @@ export const projects = pgTable(
 
 export type Project = typeof projects.$inferSelect
 
+export const invites = pgTable('invites', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  orgId: uuid('org_id').notNull().references(() => organizations.id),
+  email: text('email'),
+  role: text('role').$type<OrgRole>().notNull(),
+  tokenHash: text('token_hash').notNull().unique(),
+  createdBy: uuid('created_by').notNull().references(() => users.id),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  acceptedAt: timestamp('accepted_at', { withTimezone: true }),
+  acceptedBy: uuid('accepted_by').references(() => users.id),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+export type Invite = typeof invites.$inferSelect
+
 export const pluginInstances = pgTable('plugin_instances', {
   id: uuid('id').primaryKey().defaultRandom(),
   projectId: uuid('project_id').notNull().references(() => projects.id),
