@@ -77,6 +77,33 @@ async function datadogPost<T>(ctx: SourceContext<DatadogConfig>, path: string, b
 
 const tools: ToolSpec<DatadogConfig>[] = [
   {
+    name: 'list_metrics',
+    description:
+      'List Datadog metric names that have reported data recently, optionally filtered by a ' +
+      'substring. Use this to discover the exact metric names before writing a query_metrics query ' +
+      '— do not guess metric names.',
+    inputSchema: z.object({
+      contains: z.string().optional(),
+      minutesAgo: z.number().int().positive().default(1440),
+      limit: z.number().int().positive().max(1000).default(200),
+    }),
+    scope: 'read',
+    costHint: 'cheap',
+    latencyHintMs: 800,
+    async execute(input, ctx) {
+      const { contains, minutesAgo, limit } = input as {
+        contains?: string
+        minutesAgo: number
+        limit: number
+      }
+      const from = Math.floor(Date.now() / 1000) - minutesAgo * 60
+      const data = await datadogGet<{ metrics?: string[] }>(ctx, '/api/v1/metrics', { from: String(from) })
+      const names = data.metrics ?? []
+      const filtered = (contains ? names.filter((name) => name.includes(contains)) : names).slice(0, limit)
+      return { summary: `${filtered.length} metrics`, data: filtered }
+    },
+  },
+  {
     name: 'query_metrics',
     description: 'Run a Datadog metrics timeseries query over a recent time window',
     inputSchema: z.object({

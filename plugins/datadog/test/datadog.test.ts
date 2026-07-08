@@ -39,6 +39,31 @@ describe('datadog telemetry source', () => {
     expect(result.pass).toBe(true)
   })
 
+  it('lists metric names filtered by a substring', async () => {
+    const captured: CapturedRequest[] = []
+    const fetchImpl = fakeDatadogFetch(
+      {
+        '/api/v1/metrics': {
+          body: { metrics: ['system.cpu.user', 'system.cpu.idle', 'trace.http.request.duration'] },
+        },
+      },
+      captured,
+    )
+    const t = tool('list_metrics')
+    const result = await t.execute(t.inputSchema.parse({ contains: 'cpu' }), contextWith(fetchImpl))
+    expect(result.data).toEqual(['system.cpu.user', 'system.cpu.idle'])
+    expect(result.summary).toBe('2 metrics')
+    expect(captured[0]!.url.pathname).toBe('/api/v1/metrics')
+    expect(captured[0]!.url.searchParams.get('from')).toBeTruthy()
+  })
+
+  it('lists all metrics unfiltered and caps at the limit', async () => {
+    const fetchImpl = fakeDatadogFetch({ '/api/v1/metrics': { body: { metrics: ['a', 'b', 'c'] } } })
+    const t = tool('list_metrics')
+    const result = await t.execute(t.inputSchema.parse({ limit: 2 }), contextWith(fetchImpl))
+    expect(result.data).toEqual(['a', 'b'])
+  })
+
   it('runs a metrics query with the default window', async () => {
     const captured: CapturedRequest[] = []
     const fetchImpl = fakeDatadogFetch(

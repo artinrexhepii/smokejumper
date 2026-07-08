@@ -35,6 +35,33 @@ describe('prometheus telemetry source', () => {
     expect(result.pass).toBe(true)
   })
 
+  it('lists metric names filtered by a substring', async () => {
+    const captured: CapturedRequest[] = []
+    const fetchImpl = fakePrometheusFetch(
+      {
+        '/api/v1/label/__name__/values': {
+          status: 'success',
+          data: ['up', 'http_requests_total', 'http_request_duration_seconds', 'node_cpu_seconds_total'],
+        },
+      },
+      captured,
+    )
+    const t = tool('list_metric_names')
+    const result = await t.execute(t.inputSchema.parse({ contains: 'http' }), contextWith(fetchImpl))
+    expect(result.data).toEqual(['http_requests_total', 'http_request_duration_seconds'])
+    expect(result.summary).toBe('2 metric names')
+    expect(captured[0]!.url.pathname).toBe('/api/v1/label/__name__/values')
+  })
+
+  it('lists all metric names when unfiltered and caps at the limit', async () => {
+    const fetchImpl = fakePrometheusFetch({
+      '/api/v1/label/__name__/values': { status: 'success', data: ['a', 'b', 'c', 'd'] },
+    })
+    const t = tool('list_metric_names')
+    const result = await t.execute(t.inputSchema.parse({ limit: 2 }), contextWith(fetchImpl))
+    expect(result.data).toEqual(['a', 'b'])
+  })
+
   it('runs an instant query', async () => {
     const captured: CapturedRequest[] = []
     const fetchImpl = fakePrometheusFetch(

@@ -45,6 +45,26 @@ async function prometheusGet<T>(
 
 const tools: ToolSpec<PrometheusConfig>[] = [
   {
+    name: 'list_metric_names',
+    description:
+      'List the metric names available in Prometheus, optionally filtered by a substring. Use this ' +
+      'to discover the exact metric names before writing an instant_query or range_query — do not ' +
+      'guess metric names.',
+    inputSchema: z.object({
+      contains: z.string().optional(),
+      limit: z.number().int().positive().max(1000).default(200),
+    }),
+    scope: 'read',
+    costHint: 'cheap',
+    latencyHintMs: 500,
+    async execute(input, ctx) {
+      const { contains, limit } = input as { contains?: string; limit: number }
+      const names = await prometheusGet<string[]>(ctx, '/api/v1/label/__name__/values')
+      const filtered = (contains ? names.filter((name) => name.includes(contains)) : names).slice(0, limit)
+      return { summary: `${filtered.length} metric names`, data: filtered }
+    },
+  },
+  {
     name: 'instant_query',
     description: 'Run a PromQL instant query',
     inputSchema: z.object({ query: z.string().min(1) }),
