@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-08T14:06:04.349Z",
+  "generatedAt": "2026-07-08T18:44:47.517Z",
   "entries": [
     {
       "id": "webhook",
@@ -338,6 +338,6 @@
       ]
     }
   ],
-  "signature": "PLF3qQKHxFS1JsPdCqK7r2aUxu5o85C5j6Pdfbd6UcDJ3Ktdlyuy7T/qpBDEj6Ziwz5qW6oXFFwMYEfhOGcSAQ==",
+  "signature": "vRl205jNLVHDyS38Runqv9XIO8BZpAtoSb4Y+MmPMo36ZN16UQQ+ixADOapcH95t6Oi7uCBJ9xakKAJw98FADw==",
   "signer": "smokejumper-first-party-2026"
 }
