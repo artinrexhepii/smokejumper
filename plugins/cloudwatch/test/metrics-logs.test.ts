@@ -11,6 +11,7 @@ vi.mock('@aws-sdk/client-cloudwatch', () => ({
   CloudWatchClient: vi.fn(() => ({ send: cwSend })),
   DescribeAlarmsCommand: vi.fn((input) => ({ _name: 'DescribeAlarms', input })),
   GetMetricStatisticsCommand: vi.fn((input) => ({ _name: 'GetMetricStatistics', input })),
+  ListMetricsCommand: vi.fn((input) => ({ _name: 'ListMetrics', input })),
 }))
 
 vi.mock('@aws-sdk/client-cloudwatch-logs', () => ({
@@ -93,6 +94,63 @@ describe('cloudwatch get_metric_statistics', () => {
     const [command] = cwSend.mock.calls[0]!
     expect(command.input.ExtendedStatistics).toEqual(['p99'])
     expect(command.input.Statistics).toBeUndefined()
+  })
+})
+
+describe('cloudwatch list_metrics', () => {
+  it('lists metrics with their real dimensions and passes the namespace + signal', async () => {
+    cwSend.mockResolvedValue({
+      Metrics: [
+        {
+          Namespace: 'AWS/ApplicationELB',
+          MetricName: 'HTTPCode_Target_5XX_Count',
+          Dimensions: [{ Name: 'LoadBalancer', Value: 'app/prod-alb/0a1b2c3d4e5f6a7b' }],
+        },
+        {
+          Namespace: 'AWS/ApplicationELB',
+          MetricName: 'RequestCount',
+          Dimensions: [{ Name: 'LoadBalancer', Value: 'app/prod-alb/0a1b2c3d4e5f6a7b' }],
+        },
+      ],
+    })
+    const controller = new AbortController()
+    const result = await tool('list_metrics').execute(
+      tool('list_metrics').inputSchema.parse({ namespace: 'AWS/ApplicationELB', limit: 100 }),
+      toolCtx(controller.signal),
+    )
+    expect(result.data).toEqual([
+      {
+        namespace: 'AWS/ApplicationELB',
+        metricName: 'HTTPCode_Target_5XX_Count',
+        dimensions: { LoadBalancer: 'app/prod-alb/0a1b2c3d4e5f6a7b' },
+      },
+      {
+        namespace: 'AWS/ApplicationELB',
+        metricName: 'RequestCount',
+        dimensions: { LoadBalancer: 'app/prod-alb/0a1b2c3d4e5f6a7b' },
+      },
+    ])
+    expect(result.summary).toBe('2 metrics')
+    const [command, options] = cwSend.mock.calls[0]!
+    expect(command._name).toBe('ListMetrics')
+    expect(command.input).toMatchObject({ Namespace: 'AWS/ApplicationELB' })
+    expect(command.input.MetricName).toBeUndefined()
+    expect(options).toEqual({ abortSignal: controller.signal })
+  })
+
+  it('caps the returned metrics at the requested limit', async () => {
+    cwSend.mockResolvedValue({
+      Metrics: Array.from({ length: 8 }, (_, i) => ({
+        Namespace: 'AWS/RDS',
+        MetricName: 'CPUUtilization',
+        Dimensions: [{ Name: 'DBInstanceIdentifier', Value: `db-${i}` }],
+      })),
+    })
+    const result = await tool('list_metrics').execute(
+      tool('list_metrics').inputSchema.parse({ namespace: 'AWS/RDS', limit: 3 }),
+      toolCtx(new AbortController().signal),
+    )
+    expect(result.data).toHaveLength(3)
   })
 })
 

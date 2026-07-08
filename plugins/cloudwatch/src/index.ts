@@ -3,6 +3,7 @@ import {
   CloudWatchClient,
   DescribeAlarmsCommand,
   GetMetricStatisticsCommand,
+  ListMetricsCommand,
   type Datapoint,
 } from '@aws-sdk/client-cloudwatch'
 import {
@@ -120,6 +121,43 @@ const tools: ToolSpec<CloudwatchConfig>[] = [
         reason: alarm.StateReason ?? '',
       }))
       return { summary: `${data.length} alarms`, data }
+    },
+  },
+  {
+    name: 'list_metrics',
+    description:
+      'List CloudWatch metrics that have reported data recently, each with its namespace, metric ' +
+      'name, and real dimension values (e.g. the actual LoadBalancer or DBInstanceIdentifier). ' +
+      'Optionally filter by namespace (like "AWS/ApplicationELB" or "AWS/RDS") and/or metricName. ' +
+      'Use this to discover the exact namespace, metric name, and dimensions before calling ' +
+      'get_metric_statistics — never guess dimension values like load balancer or DB instance ids.',
+    inputSchema: z.object({
+      namespace: z.string().optional(),
+      metricName: z.string().optional(),
+      limit: z.number().int().positive().max(500).default(100),
+    }),
+    scope: 'read',
+    costHint: 'cheap',
+    latencyHintMs: 800,
+    async execute(input, ctx) {
+      const { namespace, metricName, limit } = input as {
+        namespace?: string
+        metricName?: string
+        limit: number
+      }
+      const client = cloudwatchClient(ctx.config)
+      const res = await client.send(
+        new ListMetricsCommand({ Namespace: namespace, MetricName: metricName }),
+        { abortSignal: ctx.signal },
+      )
+      const data = (res.Metrics ?? []).slice(0, limit).map((metric) => ({
+        namespace: metric.Namespace ?? '',
+        metricName: metric.MetricName ?? '',
+        dimensions: Object.fromEntries(
+          (metric.Dimensions ?? []).map((dim) => [dim.Name ?? '', dim.Value ?? '']),
+        ),
+      }))
+      return { summary: `${data.length} metrics`, data }
     },
   },
   {
