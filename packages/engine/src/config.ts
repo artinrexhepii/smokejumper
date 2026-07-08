@@ -72,9 +72,12 @@ export function resolveEngineConfig(
     const defaults = DEFAULT_MODELS[provider]
     models = {
       provider,
-      triage: env.SMOKEJUMPER_TRIAGE_MODEL ?? defaults.triage,
-      investigator: env.SMOKEJUMPER_INVESTIGATOR_MODEL ?? defaults.investigator,
-      synthesis: env.SMOKEJUMPER_SYNTHESIS_MODEL ?? defaults.synthesis,
+      // `?.trim() ||` (not `??`) so empty/whitespace overrides fall back to the
+      // default — docker-compose injects `${VAR:-}` as an empty string, which
+      // `??` would pass straight through and yield an invalid `provider/` model id.
+      triage: env.SMOKEJUMPER_TRIAGE_MODEL?.trim() || defaults.triage,
+      investigator: env.SMOKEJUMPER_INVESTIGATOR_MODEL?.trim() || defaults.investigator,
+      synthesis: env.SMOKEJUMPER_SYNTHESIS_MODEL?.trim() || defaults.synthesis,
     }
   }
   return {

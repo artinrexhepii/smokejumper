@@ -59,6 +59,25 @@ describe('resolveEngineConfig', () => {
     expect(config.models).toMatchObject({ provider: 'google', investigator: 'gemini-3-pro' })
   })
 
+  it('falls back to provider defaults when model env overrides are empty or whitespace', () => {
+    // docker-compose injects `${VAR:-}` as an empty string, which `??` would pass through.
+    const config = resolveEngineConfig(
+      {},
+      {
+        GEMINI_API_KEY: 'g',
+        SMOKEJUMPER_TRIAGE_MODEL: '',
+        SMOKEJUMPER_INVESTIGATOR_MODEL: '   ',
+        SMOKEJUMPER_SYNTHESIS_MODEL: '',
+      },
+    )
+    expect(config.models).toEqual({
+      provider: 'google',
+      triage: 'gemini-2.5-flash',
+      investigator: 'gemini-2.5-pro',
+      synthesis: 'gemini-2.5-pro',
+    })
+  })
+
   it('prefers Anthropic when both keys are set', () => {
     const config = resolveEngineConfig({}, { ANTHROPIC_API_KEY: 'a', GEMINI_API_KEY: 'g' })
     expect(config.models).toMatchObject({ provider: 'anthropic' })
