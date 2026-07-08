@@ -7,6 +7,7 @@ import {
 } from '@aws-sdk/client-cloudwatch'
 import {
   CloudWatchLogsClient,
+  DescribeLogGroupsCommand,
   FilterLogEventsCommand,
   GetQueryResultsCommand,
   StartQueryCommand,
@@ -169,6 +170,38 @@ const tools: ToolSpec<CloudwatchConfig>[] = [
         }))
         .sort((a, b) => a.timestamp.localeCompare(b.timestamp))
       return { summary: `${data.length} datapoints for ${namespace}/${metricName}`, data }
+    },
+  },
+  {
+    name: 'list_log_groups',
+    description:
+      'List CloudWatch log groups (name and stored size). Optionally filter with nameContains, a ' +
+      'case-sensitive substring matched anywhere in the log group name (e.g. the service name) — ' +
+      'log group names are often prefixed (like "/ecs/" or "/aws/lambda/"), so a substring finds ' +
+      'them where a guessed full name will not. Omit nameContains to list all groups. Use this to ' +
+      'discover the exact log group name before calling query_logs_insights or get_log_events — ' +
+      'never guess log group names.',
+    inputSchema: z.object({
+      nameContains: z.string().optional(),
+      limit: z.number().int().positive().max(50).default(50),
+    }),
+    scope: 'read',
+    costHint: 'cheap',
+    latencyHintMs: 500,
+    async execute(input, ctx) {
+      const { nameContains, limit } = input as { nameContains?: string; limit: number }
+      const client = logsClient(ctx.config)
+      const res = await client.send(
+        new DescribeLogGroupsCommand({ logGroupNamePattern: nameContains, limit }),
+        { abortSignal: ctx.signal },
+      )
+      const data = (res.logGroups ?? [])
+        .map((group) => ({
+          name: group.logGroupName ?? '',
+          storedBytes: group.storedBytes ?? 0,
+        }))
+        .sort((a, b) => b.storedBytes - a.storedBytes)
+      return { summary: `${data.length} log groups`, data }
     },
   },
   {

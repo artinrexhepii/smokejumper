@@ -18,6 +18,7 @@ vi.mock('@aws-sdk/client-cloudwatch-logs', () => ({
   StartQueryCommand: vi.fn((input) => ({ _name: 'StartQuery', input })),
   GetQueryResultsCommand: vi.fn((input) => ({ _name: 'GetQueryResults', input })),
   FilterLogEventsCommand: vi.fn((input) => ({ _name: 'FilterLogEvents', input })),
+  DescribeLogGroupsCommand: vi.fn((input) => ({ _name: 'DescribeLogGroups', input })),
 }))
 
 vi.mock('@aws-sdk/credential-providers', () => ({ fromNodeProviderChain: fromChain }))
@@ -145,6 +146,46 @@ describe('cloudwatch query_logs_insights', () => {
         toolCtx(new AbortController().signal),
       ),
     ).rejects.toThrow(/Failed/)
+  })
+})
+
+describe('cloudwatch list_log_groups', () => {
+  it('lists log groups sorted by stored size, largest first, and passes the prefix + signal', async () => {
+    logsSend.mockResolvedValue({
+      logGroups: [
+        { logGroupName: '/ecs/admin-web', storedBytes: 1_024 },
+        { logGroupName: '/ecs/api', storedBytes: 999_999 },
+        { logGroupName: '/aws/ses/set', storedBytes: 0 },
+      ],
+    })
+    const controller = new AbortController()
+    const result = await tool('list_log_groups').execute(
+      tool('list_log_groups').inputSchema.parse({ nameContains: 'shoferiim', limit: 50 }),
+      toolCtx(controller.signal),
+    )
+    expect(result.data).toEqual([
+      { name: '/ecs/api', storedBytes: 999_999 },
+      { name: '/ecs/admin-web', storedBytes: 1_024 },
+      { name: '/aws/ses/set', storedBytes: 0 },
+    ])
+    expect(result.summary).toBe('3 log groups')
+    const [command, options] = logsSend.mock.calls[0]!
+    expect(command._name).toBe('DescribeLogGroups')
+    // substring match (logGroupNamePattern), not a prefix — finds '/ecs/shoferiim-api'
+    expect(command.input).toMatchObject({ logGroupNamePattern: 'shoferiim', limit: 50 })
+    expect(command.input.logGroupNamePrefix).toBeUndefined()
+    expect(options).toEqual({ abortSignal: controller.signal })
+  })
+
+  it('omits the filter when none is given and defaults the limit', async () => {
+    logsSend.mockResolvedValue({ logGroups: [] })
+    await tool('list_log_groups').execute(
+      tool('list_log_groups').inputSchema.parse({}),
+      toolCtx(new AbortController().signal),
+    )
+    const [command] = logsSend.mock.calls[0]!
+    expect(command.input.logGroupNamePattern).toBeUndefined()
+    expect(command.input.limit).toBe(50)
   })
 })
 
